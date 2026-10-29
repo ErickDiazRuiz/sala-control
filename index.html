@@ -232,7 +232,7 @@ canvas{display:block;width:100%;height:160px}
       <div class="mon-h" id="monH"><span class="grip">⋮⋮</span><span class="lbl">Monitoreo</span><span class="mono" id="monF">—</span><button id="monMin" aria-label="Contraer">–</button></div>
       <div class="mon-b">
         <div class="kg">
-          <div class="big"><span class="lbl">Frecuencia</span><span class="v" id="kF">—</span></div>
+          <div class="big"><span class="lbl" id="kFl">Frecuencia</span><span class="v" id="kF">—</span></div>
           <div class="big"><span class="lbl">ACE Alemania</span><span class="v" id="kA">—</span></div>
           <div><span class="lbl">Demanda</span><span class="v" id="kL">—</span></div>
           <div><span class="lbl">Generación</span><span class="v" id="kG">—</span></div>
@@ -603,7 +603,8 @@ function solveNetwork(){
     const I=S.islands[b.isl],df=I.f-F0;
     L.prof=loadProf(L,S.tod/3600);L.p=L.pmax*L.scale*L.prof*S.demand*(1-L.shed)*(1+1.5*df/F0);L.q=L.p*L.qr;
     b.pl+=L.p;b.ql+=L.q;Ps[L.bus]-=L.p/SB;Qs[L.bus]-=L.q/SB;lp+=L.p;lq+=L.q}
-  for(const nb of NBS){Ps[BK[nb.key]]+=nb.sched/SB}
+  // un programa de intercambio solo se entrega si hay al menos una interconexión energizada con una barra alemana
+  for(const nb of NBS){const k=BK[nb.key];nb.linked=BRS.some(r=>r.tie&&r.on&&(r.f===k||r.t===k)&&BUSES[r.f===k?r.t:r.f].isl>=0&&BUSES[r.f===k?r.t:r.f].isl===BUSES[k].isl);if(nb.linked)Ps[k]+=nb.sched/SB}
   for(const d of DCS){if(!d.live)continue;
     if(d.ext){const pin=d.p>0?d.p-d.loss:d.p;Ps[d.a]+=pin/SB;Qs[d.a]+=d.qa/SB;if(d.ext==='BE')Ps[CEH]-=d.p/SB}
     else{const send=d.p>0?d.a:d.b,recv=d.p>0?d.b:d.a,P=Math.abs(d.p);Ps[send]-=P/SB;Ps[recv]+=(P-d.loss)/SB;Qs[d.a]+=d.qa/SB;Qs[d.b]+=d.qb/SB}}
@@ -674,7 +675,7 @@ function solveNetwork(){
   // intercambio físico (positivo = importación)
   let imp=0;for(const br of BRS)if(br.tie&&br.live){imp+=BUSES[br.f].zone==='EXT'?-br.pt:-br.pf}
   for(const d of DCS)if(d.ext&&d.live)imp+=d.p;
-  const mI=S.islands[S.main];let sched=0;if(mI&&mI.hasExt)for(const nb of NBS)sched+=nb.sched;for(const d of DCS)if(d.ext&&d.live)sched+=d.p;
+  const mI=S.islands[S.main];let sched=0;if(mI&&mI.hasExt)for(const nb of NBS)if(nb.linked)sched+=nb.sched;for(const d of DCS)if(d.ext&&d.live)sched+=d.p;
   S.imp=imp;S.impSched=sched;S.loadP=lp;S.loadQ=lq;S.genP=gp;S.loss=loss;S.cost=cost;S.co2=gp>0?co2/gp*1000:0;
   const I=S.islands[S.main];const deLive=BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);if(!deLive){S.impSched=0;S.ace=0;S.aceRaw=0;return allOk}
   if(I&&I.hasExt){S.aceRaw=(sched-imp);S.ace=S.aceRaw+S.Kde*(I.f-F0)}
@@ -693,6 +694,7 @@ function init(mode){
   if(mode==='black'){
     for(const g of GENS)if(g.type!=='ext'){g.on=false;g.pref=g.pset=g.pm=0}
     for(const br of BRS)if(!br.hidden)br.on=false;for(const L of LOADS)L.lon=false;for(const d of DCS){d.on=false;d.pset=0}
+    for(const nb of NBS){nb.sched=0;nb.nb.sched0=nb.nb.sched}
     S.init=true;solveNetwork();S.init=false;
     log('bad','Apagón total en Alemania. Europa sigue energizada: puedes reenergizar desde una interconexión o arrancar en negro con bombeo, hidro o turbinas de gas.');
     return}
@@ -1370,8 +1372,8 @@ function openDrawer(k){UI.drawer=k;$('#drawer').hidden=false;$('#drTitle').textC
 function closeDrawer(){UI.drawer=null;$('#drawer').hidden=true;document.querySelectorAll('[data-dr]').forEach(b=>b.classList.remove('on'))}
 
 /* ================= refresco ================= */
-function updMon(){const M=S.islands[S.main];
-  const kF=$('#kF');kF.innerHTML=M?`${M.f.toFixed(3)}<small>Hz</small>`:'—';kF.className='v '+(M?fClass(M.f):'st-bad');T('monF',M?M.f.toFixed(3)+' Hz':'sin tensión');$('#monF').className='mono '+(M?fClass(M.f):'st-bad');
+function updMon(){const M=S.islands[S.main];const deLive=BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);T('kFl',deLive?(M&&!M.hasExt?'Frecuencia (isla DE)':'Frecuencia'):'Frecuencia (Europa)');
+  const kF=$('#kF');kF.innerHTML=M?`${M.f.toFixed(3)}<small>Hz</small>`:'—';kF.className='v '+(M?fClass(M.f):'st-bad');T('monF',!deLive?'DE sin tensión':M?M.f.toFixed(3)+' Hz':'sin tensión');$('#monF').className='mono '+(M?fClass(M.f):'st-bad');
   const kA=$('#kA');kA.innerHTML=M?`${sgn(S.ace)}<small>MW</small>`:'—';kA.className='v '+(Math.abs(S.ace)>1000?'st-bad':Math.abs(S.ace)>300?'st-warn':'st-ok');
   H('kL',`${(S.loadP/1000).toFixed(2)}<small>GW</small>`);H('kG',`${(S.genP/1000).toFixed(2)}<small>GW</small>`);
   H('kI',`${(S.imp/1000).toFixed(2)} / ${(S.impSched/1000).toFixed(2)}<small>GW</small>`);
