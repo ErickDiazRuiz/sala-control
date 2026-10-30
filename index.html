@@ -629,7 +629,13 @@ function solveNetwork(){
     for(const i of idx)if(t2[i]===1&&BUSES[i].qfix){t2[i]=2;Q2[i]+=BUSES[i].qfix}
     let res=nr(Gm,Bm,V,th,t2,Ps,Q2,idx,S.init?40:25,nbr);
     if(!res.ok){for(const i of idx){V[i]=type[i]!==2?vset[i]:1;th[i]=0;BUSES[i].qfix=0}const t3=Int8Array.from(type);res=nr(Gm,Bm,V,th,t3,Ps,Qs,idx,50,nbr)}
-    if(!res.ok){allOk=false;islandBlackout(I,I.hasExt?'el flujo de potencia no converge en la red alemana (colapso de tensión).':'colapso de tensión en una isla eléctrica.');continue}
+    if(!res.ok){
+      // deslastre por subtensión (UVLS): abre primero el último alimentador cerrado y luego los más grandes
+      const set=new Set(idx);const cand=LOADS.filter(L=>L.lon&&set.has(L.bus)&&L.p>0);
+      if(cand.length&&(S.uvls=(S.uvls||0)+1)<=LOADS.length){cand.sort((a,b)=>(b.tOn||-1)-(a.tOn||-1)||b.p-a.p);const L=cand[0];L.lon=false;
+        log('bad',`Colapso de tensión: el relé de subtensión abre el alimentador ${L.id} (${L.p.toFixed(0)} MW). La red no podía transportar esa carga.`);
+        const r=solveNetwork();S.uvls=0;return r}
+      S.uvls=0;allOk=false;islandBlackout(I,I.hasExt?'el flujo de potencia no converge en la red alemana (colapso de tensión).':'colapso de tensión en una isla eléctrica.');continue}
     S.nr=Math.max(S.nr,res.it);
     for(const i of idx){if(type[i]!==1)continue;const b=BUSES[i],qnet=res.Q[i]-Qs[i];
       if(!b.qfix){if(qnet>qmx[i]+1e-4)b.qfix=qmx[i];else if(qnet<qmn[i]-1e-4)b.qfix=qmn[i]}
@@ -1058,7 +1064,7 @@ function tap(target,x,y){
 function operate(brk){const [k,id]=brk.split(':');
   if(k==='br'){const br=BR(id);if(br.on){br.on=false;br.ovt=0;log('warn',`Operador: abre ${br.isTr?'el transformador':'el circuito'} ${br.id}`)}else if(closeBranch(br))log('info',`Operador: cierra ${br.isTr?'el transformador':'el circuito'} ${br.id}`)}
   else if(k==='dev')toggleDev(G(id));
-  else if(k==='load'){const L=LOADS.find(x=>x.id===id);L.lon=!L.lon;log(L.lon?'info':'warn',`Operador: ${L.lon?'cierra':'abre'} el alimentador ${L.id} (${loadNow(L).toFixed(0)} MW)`)}
+  else if(k==='load'){const L=LOADS.find(x=>x.id===id);L.lon=!L.lon;if(L.lon)L.tOn=S.t;log(L.lon?'info':'warn',`Operador: ${L.lon?'cierra':'abre'} el alimentador ${L.id} (${loadNow(L).toFixed(0)} MW)`)}
   else if(k==='dc'){const d=DC(id);d.on=!d.on;log(d.on?'info':'warn',`Operador: ${d.on?'desbloquea':'bloquea'} el enlace ${d.name}`)}
   solveNetwork();updateUI()}
 const loadNow=L=>L.pmax*L.scale*loadProf(L,S.tod/3600)*S.demand*(1-L.shed);
@@ -1391,7 +1397,7 @@ function updateUI(){
   T('clock',hhmm(S.tod));T('clockLbl',S.dayRate===1?'Hora · tiempo real':`Hora · día ×${S.dayRate}`);
   $('#btnPause').textContent=UI.paused?'Reanudar':'Pausa';
   const act=Object.values(S.active),nb=act.filter(a=>a.level==='bad').length;const bell=$('#bell');bell.classList.toggle('bad',nb>0);bell.classList.toggle('warn',nb===0&&act.length>0);T('bellN',String(act.length));
-  const deDead=!BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);$('#deadband').hidden=!deDead;if(deDead)T('dbMsg',(S.lastBO?S.lastBO+' ':'')+'Cierra una interconexión o arranca en negro bombeo, hidro o turbinas de gas.');
+  const deDead=!BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);$('#deadband').hidden=!deDead;if(deDead)T('dbMsg',(S.lastBO?S.lastBO[0].toUpperCase()+S.lastBO.slice(1)+' ':'')+'Cierra una interconexión o arranca en negro bombeo, hidro o turbinas de gas.');
   updMon();
   for(const r of BRS){const R=REF.circ[r.id];if(!R)continue;const c=lCol(r,R.col);R.base.setAttribute('stroke',c);R.base.classList.toggle('open',!r.on);
     R.bq.setAttribute('stroke',r.on?(r.live?c:'var(--faint)'):'var(--dim)');R.bq.setAttribute('fill',r.on?(r.live?c:'var(--faint)'):'var(--panel)')}
@@ -1400,7 +1406,7 @@ function updateUI(){
       t=m==='p'?Math.abs(sum).toFixed(0):m==='l'?lmax.toFixed(0)+'%':m==='i'?Math.round(Math.max(...live.map(r=>Math.max(r.ia,r.ib))))+' A':live.reduce((s,r)=>s+r.qf,0).toFixed(0);
       R.lbl.setAttribute('fill',lmax>100?'var(--bad)':lmax>90?'var(--warn)':'var(--ink)');setAlarm(R.al,lmax>100?'bad':lmax>90?'warn':null)}else setAlarm(R.al,null);
     if(R.lbl.textContent!==t)R.lbl.textContent=t}
-  for(const d of DCS){const R=REF.dc[d.id];R.line.classList.toggle('off',!d.live);R.lbl.textContent=d.live?`${Math.abs(d.p).toFixed(0)} MW`:(d.on?'':'bloq.');setAlarm(R.al,d.on&&d.polesOk<2?'warn':null)}
+  for(const d of DCS){const R=REF.dc[d.id];R.line.classList.toggle('off',!d.live);R.lbl.textContent=d.live?`${Math.abs(d.p).toFixed(0)} MW`:'';setAlarm(R.al,d.on&&d.polesOk<2?'warn':null)}
   if(REF.off){const g=G('OFFN');REF.off.line.classList.toggle('off',!(g.on&&BUSES[g.bus].isl>=0))}
   for(const b of BUSES){const R=REF.bus[b.key];if(!R){if(b.nb){const n=REF.nb[b.key];const f=nbFlow(b);n.fl.textContent=BRS.some(r=>r.tie&&r.live&&(r.t===BK[b.key]))?`${sgn(f)} MW`:''}continue}
     const live=b.isl>=0;R.bar.setAttribute('fill',live?KVC[b.kv]:'var(--faint)');let t='';
