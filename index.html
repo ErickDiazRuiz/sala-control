@@ -1056,7 +1056,10 @@ function tap(target,x,y){
   const e=target&&target.closest?target.closest('[data-k]'):null;
   if(!e){closePop();return}
   const brk=e.getAttribute('data-brk');const k=e.getAttribute('data-k'),id=e.getAttribute('data-id');
-  if(brk){const now=Date.now();if(UI.lastTap&&UI.lastTap.brk===brk&&now-UI.lastTap.t<450){UI.lastTap=null;operate(brk);return}UI.lastTap={brk,t:now}}
+  if(brk){const now=Date.now();clearTimeout(UI.tapH);
+    if(UI.lastTap&&UI.lastTap.brk===brk&&now-UI.lastTap.t<450){UI.lastTap=null;operate(brk);return}
+    // un solo clic en un interruptor: espera por si llega el segundo antes de abrir la ventana
+    UI.lastTap={brk,t:now};UI.tapH=setTimeout(()=>{if(UI.lastTap&&UI.lastTap.brk===brk){UI.lastTap=null;openPop(k,id,x,y)}},460);return}
   if(k==='dcx'){const d=DCS.find(z=>z.ext===id);if(d){openPop('dc',d.id,x,y);return}}
   openPop(k,id,x,y)}
 
