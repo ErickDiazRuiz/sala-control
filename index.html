@@ -1795,7 +1795,7 @@ function openDrawer(k){UI.drawer=k;$('#drawer').hidden=false;$('#drTitle').textC
 function closeDrawer(){UI.drawer=null;$('#drawer').hidden=true;document.querySelectorAll('[data-dr]').forEach(b=>b.classList.remove('on'))}
 
 /* ================= refresco ================= */
-function updMon(){const M=S.islands[S.main];const deLive=BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);T('kFl',deLive?(M&&!M.hasExt?'Frecuencia (isla DE)':'Frecuencia'):'Frecuencia (Europa)');
+function updMon(){const deLive=BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0),M=deLive?S.islands[S.main]:null,iso=(S.ems&&S.ems.noTies)||(M&&!M.hasExt);T('kFl',iso?'Frecuencia (isla DE)':'Frecuencia');
   const kF=$('#kF');kF.innerHTML=M?`${M.f.toFixed(3)}<small>Hz</small>`:'—';kF.className='v '+(M?fClass(M.f):'st-bad');T('monF',!deLive?'DE sin tensión':M?M.f.toFixed(3)+' Hz':'sin tensión');$('#monF').className='mono '+(M?fClass(M.f):'st-bad');
   const kA=$('#kA');kA.innerHTML=M?`${sgn(S.ace)}<small>MW</small>`:'—';kA.className='v '+(Math.abs(S.ace)>1000?'st-bad':Math.abs(S.ace)>300?'st-warn':'st-ok');
   H('kL',`${(S.loadP/1000).toFixed(2)}<small>GW</small>`);H('kG',`${(S.genP/1000).toFixed(2)}<small>GW</small>`);
