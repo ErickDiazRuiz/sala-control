@@ -15,7 +15,16 @@ Simulador interactivo para operar una red de transmisión alemana simplificada e
 - Perturbaciones aleatorias o programadas: descargas atmosféricas con reenganche, disparo de bloques, bloqueo de polos HVDC, frentes de viento y nubes, saltos de carga y cambios de programa.
 - Protecciones: sobrecarga de tiempo inverso, deslastre por subfrecuencia, LFSM-O y disparo por frecuencia.
 
+## Sistema de control y misiones
+- **EMS:** estado del sistema según ENTSO-E (normal, alerta, emergencia, apagón, restablecimiento), análisis de contingencias N-1 continuo con sensibilidades LODF/PTDF, reservas frente al mayor incidente y propuesta de redispatch por circuito.
+- **WAMS:** diagrama polar de fasores de tensión con referencia elegible, diferencias angulares entre áreas con historial y alarmas, y frecuencia e inercia de cada isla.
+- **Protecciones con códigos ANSI:** distancia (21) con reenganche (79), falla de interruptor (50BF), diferencial de barras (87B), pérdida de sincronismo (78), sobretensión (59), subtensión (27), sobrecarga, subfrecuencia (81) y sincro-check (25) con los criterios europeos.
+- **Realismo de operación:** tiempos de arranque de las centrales, programas de intercambio horarios, capacidad de líneas según la estación y cambiadores de tomas automáticos opcionales.
+- **Misiones:** restablecimiento nacional, congestión norte–sur, cascada, turno con incidencias, Alemania aislada y operación libre, con objetivos, estrellas, índice de operación e informe de turno.
+
+No se simulan transitorios electromecánicos: el WAMS muestra ángulos y deslizamiento entre islas, no oscilaciones.
+
 ## Cómo se usa
-Toca cualquier elemento para abrir su ventana de control. Haz doble clic sobre un interruptor (■) para abrirlo o cerrarlo. Arrastra para mover el plano y usa la rueda o los botones para el zoom.
+Toca cualquier elemento para abrir su ventana de control. Haz doble clic sobre un interruptor (■) para abrirlo o cerrarlo. Arrastra para mover el plano y usa la rueda o los botones para el zoom. Atajos: espacio pausa, F pantalla completa, S seguridad, W fasores, A reconoce alarmas.
 
 El modelo está inspirado en la red real de 2026. Las ubicaciones, los corredores y las potencias son aproximados y agregados por región.

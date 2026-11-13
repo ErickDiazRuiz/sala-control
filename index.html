@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0f13">
-<meta name="description" content="Simulador interactivo de operación de la red de transmisión alemana simplificada: flujo AC en tiempo real, HVDC, zonas de control, arranque en negro y perturbaciones.">
+<meta name="description" content="Simulador de entrenamiento de despachadores sobre una red de transmisión alemana simplificada: EMS con N-1, WAMS con fasores, protecciones, misiones e informe de turno.">
 <title>Sala de Control Alemania</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -191,6 +191,22 @@ canvas{display:block;width:100%;height:160px}
 .empty{color:var(--dim);font-size:13px}
 
 /* inicio */
+.btn.state{font-size:14px;letter-spacing:.1em;border-width:2px;min-width:118px;justify-content:center}
+.s-normal{border-color:var(--ok);color:var(--ok)}.s-alerta{border-color:var(--warn);color:var(--warn)}.s-emergencia,.s-apagon{border-color:var(--bad);color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--panel-2))}.s-restab{border-color:var(--kv380);color:var(--kv380)}
+.btn.go{background:var(--ok);border-color:var(--ok);color:var(--bg)}
+.bell.bad svg{animation:none}.bell.unack svg{animation:ring 1s infinite}
+.mis{left:auto;right:10px;top:52px;width:272px}
+.mis-n{font-family:var(--f-disp);font-weight:700;font-size:16px;letter-spacing:.03em;line-height:1.2}
+.goals{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:12.5px}
+.goals li{display:grid;grid-template-columns:14px 1fr;gap:7px;align-items:baseline;color:var(--ink)}
+.goals li i{font-style:normal;font-family:var(--f-mono);color:var(--dim)}
+.goals li.ok{color:var(--dim)}.goals li.ok i{color:var(--ok)}.goals li.ko i,.goals li.ko{color:var(--bad)}.goals li.keep i{color:var(--faint);font-size:9px}
+.goals em{font-style:normal;font-family:var(--f-mono);color:var(--kv380)}
+.st-big{font-family:var(--f-disp);font-weight:700;font-size:30px;letter-spacing:.08em;text-transform:uppercase;line-height:1}
+.rep-top{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
+.rep-n{font-family:var(--f-disp);font-weight:700;font-size:22px}.rep-s{font-size:26px;color:var(--warn);letter-spacing:.1em}
+.rep-i{font-family:var(--f-mono);font-size:38px;line-height:1}.rep-i small{font-size:14px;color:var(--dim)}
+.rep-t td{font-size:13px;padding:5px 4px}.rep-t td:first-child{font-family:var(--f-body);color:var(--dim)}
 .modal{position:fixed;inset:0;z-index:70;background:rgba(5,8,10,.78);display:grid;place-items:center;padding:16px}
 .modal-c{width:min(760px,100%);max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--faint);border-radius:8px;padding:20px;display:grid;gap:14px}
 .modal-c h2{margin:0;font-family:var(--f-disp);font-size:26px;letter-spacing:.06em;text-transform:uppercase}
@@ -202,9 +218,9 @@ canvas{display:block;width:100%;height:160px}
 .opts span{color:var(--dim);font-size:13px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:80;background:var(--panel-2);border:1px solid var(--faint);border-radius:6px;padding:10px 14px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 
-@media (max-width:1500px){.brand-sub{display:none}}
-@media (max-width:1180px){.bt{display:none}}
-@media (max-width:760px){.deadband{left:8px;right:52px;bottom:56px;transform:none;width:auto}.bt{display:none}.brand-sub,#speedSeg .lbl,.clock .lbl{display:none}.brand{flex-basis:100%}.mon{width:250px}.legend{display:none}.tools{top:auto;bottom:8px;right:52px;left:8px;justify-content:flex-start}}
+@media (max-width:1760px){.brand-sub{display:none}}
+@media (max-width:1760px){.bt{display:none}}
+@media (max-width:760px){.mis{top:54px;left:10px;right:auto;width:250px}.btn.state{min-width:0;font-size:12px}.deadband{left:8px;right:52px;bottom:56px;transform:none;width:auto}.bt{display:none}.brand-sub,#speedSeg .lbl,.clock .lbl{display:none}.brand{flex-basis:100%}.mon{width:250px}.legend{display:none}.tools{top:auto;bottom:8px;right:52px;left:8px;justify-content:flex-start}}
 @media (prefers-reduced-motion:reduce){.alm.bad,.bell.bad svg{animation:none}}
 </style>
 </head>
@@ -216,10 +232,12 @@ canvas{display:block;width:100%;height:160px}
       <div class="brand-name">Sala de control · <span>Alemania</span></div>
       <div class="brand-sub">Red de transmisión simplificada · 380/220/110 kV · HVDC · 4 zonas de control · flujo AC en tiempo real</div>
     </div>
+    <button class="btn state s-normal" id="stPill" data-dr="sec" title="Estado del sistema (ENTSO-E)">NORMAL</button>
     <div class="clock"><span class="lbl" id="clockLbl">Hora</span><span class="mono" id="clock">08:00:00</span></div>
     <button class="btn" id="btnPause">Pausa</button>
     <div class="seg" id="speedSeg"><span class="lbl">Vel.</span><button data-s="0.1">×0.1</button><button data-s="0.25" class="on">×0.25</button><button data-s="0.5">×0.5</button><button data-s="1">×1</button><button data-s="2">×2</button></div>
     <button class="btn" data-dr="dist"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 1L3 9h4l-1 6 6-8H8z"/></svg><span class="bt">Perturbaciones</span></button>
+    <button class="btn" data-dr="wams"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/><path d="M8 8L12.5 4M8 8L3.5 6.5M8 8L10 13"/></svg><span class="bt">Fasores</span></button>
     <button class="btn" data-dr="trend"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12l4-5 3 3 5-7"/><path d="M1 15h14"/></svg><span class="bt">Tendencias</span></button>
     <button class="btn" data-dr="sys"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.6" fill="var(--panel-2)"/><circle cx="11" cy="8" r="1.6" fill="var(--panel-2)"/><circle cx="7" cy="12" r="1.6" fill="var(--panel-2)"/></svg><span class="bt">Sistema</span></button>
     <button class="btn bell" data-dr="alarm" id="bell" aria-label="Alarmas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0"/></svg><span class="bt">Alarmas</span><span class="badge" id="bellN">0</span></button>
@@ -249,8 +267,15 @@ canvas{display:block;width:100%;height:160px}
         <div class="meta" id="monIsl"></div>
       </div>
     </div>
+    <div class="mon mis" id="mis" hidden>
+      <div class="mon-h" id="misH"><span class="grip">⋮⋮</span><span class="lbl">Misión</span><span class="mono" id="misT"></span><button id="misMin" aria-label="Contraer">–</button></div>
+      <div class="mon-b"><div class="mis-n" id="misN"></div><ul class="goals" id="misG"></ul>
+        <div class="kg"><div><span class="lbl">Índice</span><span class="v" id="misI">—</span></div><div><span class="lbl">Seguridad N-1</span><span class="v" id="misN1">—</span></div>
+          <div><span class="lbl">Reserva ↑ / ↓</span><span class="v" id="misR">—</span></div><div><span class="lbl">Residual +30/+60</span><span class="v" id="misF">—</span></div></div>
+        <div class="row"><button class="btn" id="misRep">Informe</button><button class="btn" id="misMenu">Misiones</button></div></div>
+    </div>
     <div class="tools">
-      <div class="seg" id="segBus"><span class="lbl">Barras</span><button data-m="v" class="on">pu</button><button data-m="kv">kV</button><button data-m="off">—</button></div>
+      <div class="seg" id="segBus"><span class="lbl">Barras</span><button data-m="v" class="on">pu</button><button data-m="kv">kV</button><button data-m="th">θ</button><button data-m="off">—</button></div>
       <div class="seg" id="segLine"><span class="lbl">Ramas</span><button data-m="p" class="on">MW</button><button data-m="l">%</button><button data-m="i">A</button><button data-m="q">MVAr</button></div>
       <div class="seg" id="segLay"><button data-l="zones" class="on">Zonas</button><button data-l="vals" class="on">Valores</button></div>
     </div>
@@ -267,13 +292,17 @@ canvas{display:block;width:100%;height:160px}
     <h2>Sala de control · Alemania</h2>
     <p>Red de transmisión alemana simplificada: 56 subestaciones en 380, 220 y 110 kV, cuatro zonas de control (Amprion, TenneT, 50Hertz, TransnetBW), dobles ternas, enlaces HVDC, interconexiones con siete países y el resto de Europa como equivalente. Tú despachas, maniobras y respondes a las perturbaciones.</p>
     <div class="opts">
-      <button data-mode="black"><b>Apagón total</b><span>Alemania sin tensión y todos los interruptores abiertos. Europa sigue energizada: restablece desde una interconexión o con arranque en negro.</span></button>
-      <button data-mode="normal"><b>Operación normal</b><span>Red interconectada con Europa en el despacho económico de las 08:00. Mantén el ACE en cero y la red sin sobrecargas.</span></button>
-      <button data-mode="island"><b>Alemania aislada</b><span>Todas las interconexiones AC abiertas. La frecuencia depende solo de ti: la inercia es menor y cada desbalance pesa más.</span></button>
+      <button data-mode="black"><b>Restablecimiento nacional</b><span>Alemania a oscuras. Reenergiza desde Europa o arranca en negro, toma carga por bloques y resincroniza las islas.</span></button>
+      <button data-mode="congest"><b>Congestión norte–sur</b><span>Frente de viento en el norte y corredores saturados. Resuélvelo con redispatch, HVDC y desfasadores antes de que actúen las protecciones.</span></button>
+      <button data-mode="cascade"><b>Cascada norte–sur</b><span>Una tormenta saca cuatro circuitos de 380 kV. Evita que la sobrecarga se propague y recupera la red.</span></button>
+      <button data-mode="shift"><b>Turno con incidencias</b><span>De 08:00 a 12:00 con rayos, disparos de bloques, polos HVDC bloqueados y cambios de programa.</span></button>
+      <button data-mode="island"><b>Alemania aislada</b><span>Sin interconexiones AC: poca inercia y la frecuencia depende solo de ti durante dos horas.</span></button>
+      <button data-mode="normal"><b>Operación libre</b><span>Red interconectada, sin objetivos. Para explorar y practicar a tu ritmo.</span></button>
     </div>
-    <p class="meta">Toca cualquier elemento para ver su ventana de control. Doble clic sobre un interruptor (■) para abrirlo o cerrarlo. Arrastra para mover el plano y usa la rueda o los botones para el zoom.</p>
+    <p class="meta">Toca un elemento para abrir su ventana. Doble clic en un interruptor (■) lo opera. Atajos: espacio pausa · F pantalla completa · S seguridad · W fasores · A reconoce alarmas · + − 0 zoom.</p>
   </div>
 </div>
+<div class="modal" id="report" hidden><div class="modal-c" id="repBody"></div></div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -315,7 +344,7 @@ const DCX={NO:{name:'Noruega',x:770,y:22,w:110,h:42,sync:'Nórdico'},SE:{name:'S
   OFF:{name:'Parques marinos Mar del Norte',x:250,y:22,w:220,h:42,sync:'—'}};
 // a, b, km, circuitos, opciones {tr:MVA total, pst, ym, xm}
 const COR_DEF=[
-['DIE','DOR',25,2],['DOR','CON',80,2],['CON','LAN',110,2],['BRU','LAN',140,2,{ym:300}],['DOR','GRN',130,2],
+['DIE','DOR',25,2],['DOR','CON',80,2],['CON','LAN',110,2],['BRU','LAN',140,2,{ym:300}],['CON','HAM',150,2,{ym:285}],['DOR','GRN',130,2],
 ['BRU','WIL',15,2],['WIL','AUD',60,2],['WIL','HAM',60,2],['AUD','HAM',90,1],['HAM','LUB',60,1],['HAM','GUS',140,2,{ym:265}],
 ['HAM','NOR',0,1,{tr:12000}],['HAM','WAH',170,2],['LAN','GRO',60,2],['GRO','WAH',70,2],['LAN','RUH',150,2],['GRO','BOR',110,2],
 ['WAH','WOL',80,2],['WAH','NIE',0,1,{tr:9000}],['BOR','KRI',150,2],['BOR','GRA',130,2],['GRA','RAI',90,2],['GRA','GGA',140,2],
@@ -329,7 +358,7 @@ const COR_DEF=[
 ['ROM','KOE',0,2,{tr:8000}],['KOE','KOB',90,2],['KOB','FRA',100,2],['KRI','FRA',0,2,{tr:8000}],
 ['PHI','DAX',35,2],['PHI','GGA',60,2],['GGA','END',50,2],['DAX','EIC',120,2],['EIC','KUE',70,2],['END','KUE',180,1,{ym:1540}],
 ['END','BW1',0,1,{tr:12000}],['PHI','END',90,2,{ym:1325}],
-['DIE','NL',40,1,{pst:1}],['GRN','NL',40,2],['UCH','FR',60,2],['EIC','FR',30,1],['KUE','CH',5,2],['PLE','AT',40,2],
+['DIE','NL',40,2,{pst:1}],['GRN','NL',40,2],['UCH','FR',60,2],['EIC','FR',30,1],['KUE','CH',5,2],['PLE','AT',40,2],
 ['ETZ','CZ',100,2],['ROE','CZ',90,2],['BER','PL',30,2,{pst:1}],['HAG','PL',20,2,{pst:1}],['AUD','DK1',80,2]];
 const LOAD_DEF0=[['R11',10000,.25,{res:.35,com:.25,ind:.4}],['KOE',5000,.25,{res:.45,com:.35,ind:.2}],['FRA',5500,.25,{res:.35,com:.45,ind:.2}],
  ['UCH',1500,.3,{res:.4,com:0,ind:.6}],['NIE',6000,.25,{res:.5,com:.25,ind:.25}],['NOR',5000,.25,{res:.5,com:.3,ind:.2}],
@@ -363,7 +392,7 @@ const GEN_DEF=[
  {id:'BATW',name:'Baterías Oeste',type:'bess',bus:'KOE',pmax:1200,emax:2400},
  {id:'DRR',name:'Industria flexible Ruhr (acero/aluminio)',type:'dr',bus:'R11',pmax:800},
  {id:'OFFN',name:'Eólica marina Mar del Norte (BorWin/DolWin)',type:'off',bus:'DOR',pmax:8000,vmean:9},
- {id:'EON',name:'Eólica Baja Sajonia',type:'wind',bus:'CON',pmax:15000,vmean:7.5},
+ {id:'EON',name:'Eólica Baja Sajonia',type:'wind',bus:'CON',pmax:15000,vmean:7},
  {id:'EOS',name:'Eólica Schleswig-Holstein',type:'wind',bus:'NOR',pmax:10000,vmean:8},
  {id:'EOH',name:'Eólica Hesse',type:'wind',bus:'BOR',pmax:4000,vmean:6},
  {id:'CCN',name:'Ciclo combinado Baja Sajonia',type:'ccgt',bus:'LAN',pmax:2500,block:500,vset:1.035},
@@ -462,7 +491,7 @@ function newState(){return {t:0,clk:8*3600,tod:8*3600,dayRate:10,season:'otono',
   log:[],logVer:0,active:{},hist:[],histT:0,nr:0,
   dist:{level:0,last:0},queue:[],qid:1,pending:[],V:null,th:null,lastBO:null}}
 function log(level,msg){S.log.unshift({t:S.tod,level,msg});if(S.log.length>200)S.log.pop();S.logVer++}
-function cond(key,on,level,msg,clear){if(on){if(!S.active[key])log(level,msg);S.active[key]={level,msg}}else if(S.active[key]&&(clear===undefined||clear))delete S.active[key]}
+function cond(key,on,level,msg,clear){if(on){const a=S.active[key];if(!a){log(level,msg);S.active[key]={level,msg,ack:false}}else{if(a.level!==level&&level==='bad')a.ack=false;a.level=level;a.msg=msg}}else if(S.active[key]&&(clear===undefined||clear))delete S.active[key]}
 function loadProf(L,h){if(!S.profile)return 1;const m=L.mix,s=m.res+m.com+m.ind||1;return (m.res*LP.res(h)+m.com*LP.com(h)+m.ind*LP.ind(h))/s}
 function solarShape(h){const z=SEASON[S.season];if(h<=z.rise||h>=z.set)return 0;return Math.pow(Math.sin(Math.PI*(h-z.rise)/(z.set-z.rise)),1.3)}
 function windCurve(v){if(v>=25)return Math.max(0,1-(v-25)/4);return 1/(1+Math.exp(-(v-9.5)/1.6))-0.0027}
@@ -690,7 +719,7 @@ function solveNetwork(){
   return allOk}
 
 /* ----- inicialización y despacho ----- */
-function init(mode){
+function init0(mode){
   build();S=newState();
   for(const g of GENS){if(g.type==='cap'||g.type==='reac')g.q0=v=>g.qn*v*v}
   for(const g of GENS)if(!g.q0)g.q0=()=>0;
@@ -741,16 +770,16 @@ function economicDispatch(force,extra){
 
 /* ----- maniobras ----- */
 function tripGen(g,reason){if(!g.on)return;g.on=false;g.trip=reason;S.agc=0;g.agcSh=0;g.gov=0;g.p=0;g.pm=0;g.q=0;log('bad',`${g.id} disparada: ${reason}`)}
-function tripLine(br,reason){if(!br.on)return;br.on=false;br.ovt=0;log('bad',reason)}
+function tripLine0(br,reason){if(!br.on)return;br.on=false;br.ovt=0;log('bad',reason)}
 function syncCheck(br){
   const a=BUSES[br.f],b=BUSES[br.t];
   if(a.isl<0||b.isl<0||a.isl===b.isl)return null;
   const Ia=S.islands[a.isl],Ib=S.islands[b.isl];
   const df=Ia.f-Ib.f,dv=a.v-b.v;let dth=((Ia.phi+a.th)-(Ib.phi+b.th)+br.phi)%360;if(dth>180)dth-=360;if(dth<-180)dth+=360;
-  return {df,dv,dth,ok:Math.abs(df)<=0.2&&Math.abs(dv)<=0.1&&Math.abs(dth)<=20}}
-function closeBranch(br){
+  return {df,dv,dth,ok:Math.abs(df)<=0.15&&Math.abs(Ia.f-F0)<=0.2&&Math.abs(Ib.f-F0)<=0.2&&Math.abs(dv)<=0.1&&Math.abs(dth)<=20}}
+function closeBranch0(br){
   const sc=syncCheck(br);
-  if(sc&&S.syncChk&&!sc.ok){log('warn',`Sincro-check bloquea el cierre de ${br.id}: Δf ${sc.df.toFixed(3)} Hz · ΔV ${(sc.dv*100).toFixed(1)} % · Δθ ${sc.dth.toFixed(0)}° (límites 0.2 Hz · 10 % · 20°)`);return false}
+  if(sc&&S.syncChk&&!sc.ok){log('warn',`Sincro-check bloquea el cierre de ${br.id}: Δf ${sc.df.toFixed(3)} Hz · ΔV ${(sc.dv*100).toFixed(1)} % · Δθ ${sc.dth.toFixed(0)}° (25: Δf ≤ 0.15 Hz con ambas islas en 49.8–50.2 Hz · ΔU ≤ 10 % · Δφ ≤ 20°)`);return false}
   br.on=true;br.ovt=0;
   if(sc){log('info',`${br.id}: cierre sincronizado de dos islas (Δf ${sc.df.toFixed(3)} Hz, Δθ ${sc.dth.toFixed(0)}°)`);
     if(!sc.ok){const pk=Math.abs(sc.dth)*40+Math.abs(sc.df)*2000;log('bad',`${br.id}: cierre fuera de sincronismo, oscilación de potencia de ~${pk.toFixed(0)} MW`);if(Math.abs(sc.dth)>60)tripLine(br,`Protección: ${br.id} dispara por cierre fuera de sincronismo`)}}
@@ -783,7 +812,7 @@ function randomDisturbance(){
 function scheduleDist(type,target,clkAt,mag){S.queue.push({id:S.qid++,type,target,at:clkAt,mag});S.queue.sort((a,b)=>a.at-b.at)}
 
 /* ----- paso de simulación ----- */
-function step(dt){
+function step0(dt){
   S.t+=dt;S.clk+=dt*S.dayRate;S.tod=S.clk%86400;const h=S.tod/3600;
   for(let k=S.pending.length-1;k>=0;k--)if(S.pending[k].at<=S.t){const p=S.pending[k];S.pending.splice(k,1);p.fn()}
   while(S.queue.length&&S.queue[0].at<=S.clk){const q=S.queue.shift();log('info',`Perturbación programada: ${DIST[q.type].lbl} · ${q.target}`);DIST[q.type].run(q.target,false,q.mag)}
@@ -794,7 +823,7 @@ function step(dt){
     const I=S.islands[BUSES[g.bus].isl];const df=I?I.f-F0:0;
     if(g.type==='ext'){const tgt=-g.K*(Math.abs(df)<0.01?0:df-Math.sign(df)*0.01);g.gov+=(tgt-g.gov)*Math.min(1,dt/g.Tg);g.pm=g.pset+g.gov;continue}
     const hi=pavail(g);g.pref=clamp(g.pref,g.plo,hi);
-    const d=g.pref-g.pset,mx=g.ramp*dt;g.pset+=clamp(d,-mx,mx);
+    const d=g.pref-g.pset,mx=g.ramp*dt*clamp(S.dayRate,1,10);g.pset+=clamp(d,-mx,mx);
     const dfe=Math.abs(df)<0.01?0:df-Math.sign(df)*0.01;
     const tgt=S.primOn?-(g.sn/g.R)*(dfe/F0):0;g.gov+=(tgt-g.gov)*Math.min(1,dt/g.Tg);
     g.pm=clamp(g.pset+g.gov+g.agcSh,g.plo,hi);
@@ -839,6 +868,194 @@ function step(dt){
   S.histT+=dt;if(S.histT>=0.5&&M){S.histT=0;S.hist.push([S.t,M.f,S.ace]);while(S.hist.length&&S.hist[0][0]<S.t-300)S.hist.shift()}
 }
 //MODEL-END
+/* ===== EMS: seguridad N-1, estados, reservas, WAMS, protecciones, arranques, mercado, misiones ===== */
+const START_T={lig:7200,coal:5400,ccgt:1800,bio:1800,gas:480,hydro:90,phs:90,syncon:300};
+const RATE_F={verano:0.94,otono:1,primavera:1,invierno:1.1};
+const PMU_PAIRS=[['BRU','ISA','Norte–Sur este'],['CON','PHI','Norte–Sur oeste'],['WIL','GGA','Corredor SuedLink'],['NEU','RUH','Este–Oeste'],['LBM','KUE','Báltico–Alpes']];
+const STATE_LBL={normal:'Normal',alerta:'Alerta',emergencia:'Emergencia',apagon:'Apagón',restab:'Restablecimiento'};
+const wrap180=x=>((x+180)%360+360)%360-180;
+const deLive=()=>{let n=0;for(const b of BUSES)if(b.zone!=='EXT'&&b.isl>=0)n++;return n};
+const deTotal=()=>BUSES.filter(b=>b.zone!=='EXT').length;
+const deIslands=()=>S.islands.filter(I=>I.buses.some(i=>BUSES[i].zone!=='EXT')).length;
+const isRen=g=>g.type==='wind'||g.type==='off'||g.type==='solar';
+function init(mode){init0(mode);emsInit(mode)}
+function step(dt){step0(dt);emsStep(dt)}
+function tripLine(br,reason){if(S.ems&&br.on){S.ems.kpi.trips++;if(/sobrecarga/.test(reason))S.ems.ovTrip=true}tripLine0(br,reason)}
+function closeBranch(br){if(br.lockT>0){log('warn',`${br.id} está en descargo por falla permanente; disponible en ${Math.ceil(br.lockT/60)} min de reloj`);return false}return closeBranch0(br)}
+function emsInit(mode){for(const br of BRS){br.rate0=br.rate;br.lockT=0}
+  S.ems={mode,startT:true,market:mode==='normal',mkHr:Math.floor(S.clk/3600),oltc:false,oltcT:0,n1:[],n1Count:0,n1T:0,sens:null,
+    state:mode==='black'?'apagon':'normal',cand:null,candT:0,restoring:mode==='black',lastBO:S.lastBO,reBO:false,ovTrip:false,shedEver:false,
+    resUp:0,resDn:0,refInc:0,maxLoad:0,expected:0,served:0,idx:100,grade:'A',mT:0,ref:'KRI',refKey:null,refA:0,ah:[],ahT:0,ang:[],why:[],
+    kpi:{T:0,tN:0,tA:0,tE:0,tB:0,tR:0,ens:0,eExp:0,cost:0,co2:0,curt:0,eRen:0,aceI:0,fI:0,fIn:0,trips:0},mission:null,done:false,split:false,stars:0,report:false};
+  emsN1();emsMeasure()}
+/* --- sensibilidades DC de la isla principal --- */
+function emsSens(){const I=S.islands[S.main];if(!I)return null;const nB=BUSES.length,map=new Int16Array(nB).fill(-1);let n=0;const ref=I.slack.bus;
+  for(const i of I.buses)if(i!==ref)map[i]=n++;
+  if(!n)return null;const A=[];for(let r=0;r<n;r++){A.push(new Float64Array(2*n));A[r][n+r]=1}
+  const brs=[];
+  for(const br of BRS){if(!br.live||BUSES[br.f].isl!==S.main)continue;brs.push(br);const b=1/br.x,f=map[br.f],t=map[br.t];
+    if(f>=0)A[f][f]+=b;if(t>=0)A[t][t]+=b;if(f>=0&&t>=0){A[f][t]-=b;A[t][f]-=b}}
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;if(Math.abs(A[p][c])<1e-9)return null;
+    if(p!==c){const t=A[c];A[c]=A[p];A[p]=t}const Ac=A[c],d=Ac[c];for(let k=c;k<2*n;k++)Ac[k]/=d;
+    for(let r=0;r<n;r++){if(r===c)continue;const Ar=A[r],f=Ar[c];if(f===0)continue;for(let k=c;k<2*n;k++)Ar[k]-=f*Ac[k]}}
+  const X=(i,j)=>{const a=map[i],b=map[j];return a<0||b<0?0:A[a][n+b]};
+  const ptdf=(l,i,j)=>(X(l.f,i)-X(l.f,j)-X(l.t,i)+X(l.t,j))/l.x;
+  return {brs,ptdf,ref}}
+function emsN1(){const E=S.ems,Sx=emsSens();E.sens=Sx;const out=[];if(!Sx){E.n1=out;E.n1Count=0;return}
+  const vis=Sx.brs.filter(b=>!b.hidden),P=b=>(b.pf-b.pt)/2,ref=Sx.ref;
+  const test=(name,kind,id,skip,dP)=>{let worst=null,wl=0;for(const l of vis){if(l===skip)continue;const s=Math.hypot(P(l)+dP(l),l.qf)/l.rate*100;if(s>wl&&s>l.loading+3){wl=s;worst=l}}
+    if(wl>100)out.push({name,kind,id,worst:worst.id,load:wl})};
+  for(const k of vis){const d=1-Sx.ptdf(k,k.f,k.t);if(d<0.02)continue;const pk=P(k);if(Math.abs(pk)<20)continue;
+    test((k.isTr?'Transformador ':'Circuito ')+k.id,'br',k.id,k,l=>Sx.ptdf(l,k.f,k.t)/d*pk)}
+  for(const g of GENS){if(!g.on||!g.sync||g.type==='ext'||g.type==='syncon'||g.p<300||BUSES[g.bus].isl!==S.main)continue;const lost=Math.min(g.block||g.pmax,g.p);
+    test(`Bloque de ${g.id} (${Math.round(lost)} MW)`,'dev',g.id,null,l=>-lost*Sx.ptdf(l,g.bus,ref))}
+  for(const d of DCS){if(!d.live||Math.abs(d.p)<100||BUSES[d.a].isl!==S.main)continue;
+    if(d.b!=null&&BUSES[d.b].isl===S.main)test(`HVDC ${d.name}`,'dc',d.id,null,l=>d.p*Sx.ptdf(l,d.a,d.b));
+    else if(d.b==null)test(`HVDC ${d.name}`,'dc',d.id,null,l=>-d.p*Sx.ptdf(l,d.a,ref))}
+  out.sort((a,b)=>b.load-a.load);E.n1Count=out.length;E.n1=out.slice(0,25)}
+function emsRemedial(l){const Sx=S.ems.sens;if(!Sx||!l.live||BUSES[l.f].isl!==S.main)return null;const s=Math.sign((l.pf-l.pt)||1);let up=null,dn=null,dc=null;
+  for(const g of GENS){if(!g.on||BUSES[g.bus].isl!==S.main||g.type==='ext'||g.type==='syncon')continue;
+    const disp=g.sync||g.type==='bess'||g.type==='ev';if(!disp&&!isRen(g))continue;const e=s*Sx.ptdf(l,g.bus,Sx.ref);
+    if(disp&&(g.sync?pavail(g):g.phi)-g.p>50&&(!up||e<up.e))up={id:g.id,e};
+    if(g.p-(disp?g.plo:0)>50&&(!dn||e>dn.e))dn={id:g.id,e,ren:isRen(g)}}
+  for(const d of DCS){if(!d.live||d.b==null||BUSES[d.b].isl!==S.main)continue;const e=s*Sx.ptdf(l,d.b,d.a);
+    const room=e<0?d.pmax*d.polesOk/2-d.p:d.p+d.pmax*d.polesOk/2;if(room>50&&(!dc||Math.abs(e)>Math.abs(dc.e)))dc={id:d.id,name:d.name,e}}
+  return {up,dn,dc}}
+/* --- medidas, estado y KPI --- */
+function pmuAbs(b){const I=S.islands[b.isl];return I?I.phi+b.th:null}
+function pmuRel(b){return b.isl>=0?wrap180(pmuAbs(b)-S.ems.refA):null}
+function emsMeasure(){const E=S.ems,h=S.tod/3600;let exp=0;for(const L of LOADS)exp+=L.pmax*L.scale*loadProf(L,h)*S.demand;E.expected=exp;E.served=S.loadP;
+  let up=0,dn=0,ref=0;
+  for(const g of GENS){if(!g.on||BUSES[g.bus].isl<0||g.type==='ext'||g.type==='syncon')continue;
+    if(g.sync){const r=g.ramp*900;up+=clamp(pavail(g)-g.pm,0,r);dn+=clamp(g.pm-Math.max(g.plo,g.pminT||0),0,r);ref=Math.max(ref,Math.min(g.block||g.pmax,g.p))}
+    else if(g.type==='bess'||g.type==='ev'){if(g.soc>0.1)up+=Math.max(0,g.phi-g.p);if(g.soc<0.95)dn+=Math.max(0,g.p-g.plo)}
+    else if(isRen(g))dn+=g.p}
+  for(const d of DCS)if(d.live)ref=Math.max(ref,Math.abs(d.p)/2);
+  E.resUp=up;E.resDn=dn;E.refInc=ref;
+  let mx=0;for(const br of BRS)if(br.live&&!br.hidden&&br.loading>mx)mx=br.loading;E.maxLoad=mx;
+  let rb=BUSES[BK[E.ref]];if(!rb||rb.isl<0)rb=BUSES.find(b=>b.zone!=='EXT'&&b.isl>=0);
+  E.refA=rb?pmuAbs(rb):0;E.refKey=rb?rb.key:null;
+  E.ang=PMU_PAIRS.map(([a,b])=>{const A=BUSES[BK[a]],B=BUSES[BK[b]];return A.isl>=0&&B.isl>=0?wrap180(pmuAbs(A)-pmuAbs(B)):null});
+  E.angSync=PMU_PAIRS.map(([a,b])=>BUSES[BK[a]].isl>=0&&BUSES[BK[a]].isl===BUSES[BK[b]].isl)}
+function emsState(){const E=S.ems,why=[];const live=deLive(),tot=deTotal(),M=S.islands[S.main];
+  if(S.lastBO&&S.lastBO!==E.lastBO){E.restoring=true;if(E.kpi.T>0)E.reBO=true}E.lastBO=S.lastBO;
+  if(live===0){E.why=['Ninguna barra alemana tiene tensión'];return 'apagon'}
+  if(E.restoring){if(live===tot&&E.served>=0.9*E.expected&&deIslands()===1)E.restoring=false;else{E.why=[`${live} de ${tot} barras con tensión`,`${(E.served/Math.max(1,E.expected)*100).toFixed(0)} % de la demanda suministrada`];return 'restab'}}
+  const df=M?Math.abs(M.f-F0):0;
+  if(df>0.2)why.push('Frecuencia fuera de 49.8–50.2 Hz');
+  if(E.maxLoad>100)why.push('Hay circuitos en sobrecarga');
+  if(BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0&&(b.v<0.9||b.v>1.12)))why.push('Tensiones fuera de límites');
+  if(LOADS.some(L=>L.shed>0)){why.push('Hay carga deslastrada');E.shedEver=true}
+  if(deIslands()>1)why.push('La red está dividida en islas');
+  if(live<tot)why.push('Hay barras sin tensión');
+  if(why.length){E.why=why;return 'emergencia'}
+  if(E.n1Count>0)why.push(`${E.n1Count} contingencias N-1 provocarían sobrecarga`);
+  if(df>0.1)why.push('Desvío de frecuencia mayor de 100 mHz');
+  if(E.resUp<E.refInc)why.push(`Reserva a subir (${Math.round(E.resUp)} MW) menor que el mayor incidente (${Math.round(E.refInc)} MW)`);
+  E.why=why;return why.length?'alerta':'normal'}
+function emsIndex(){const E=S.ems,K=E.kpi;if(K.T<1){E.idx=100;E.grade='A';return}const Tn=K.T-K.tR;
+  const sec=Tn>0?1-(K.tE+K.tB)/Tn:1,n1=Tn>0?K.tN/Tn:1,sup=K.eExp>0?1-K.ens/K.eExp:1;
+  const M=S.islands[S.main];const bal=M&&!M.hasExt?clamp(1-(K.fI/K.T)/0.3,0,1):clamp(1-(K.aceI/K.T-100)/1900,0,1);
+  const eco=K.eRen+K.curt>0?K.eRen/(K.eRen+K.curt):1;
+  E.parts={sec,n1,sup,bal,eco};E.idx=100*(0.35*sec+0.2*n1+0.25*sup+0.1*bal+0.1*eco);
+  E.grade=E.idx>=90?'A':E.idx>=80?'B':E.idx>=65?'C':E.idx>=50?'D':'E'}
+function syncUnit(g){const b=BUSES[g.bus];g.on=true;g.trip='';g.gov=0;g.agcSh=0;g.pset=g.pm=0;g.pref=0;g.starting=false;
+  if(b.isl<0){g.islKey=null;S.lastBO=null;log('info',`${g.id}: arranque en negro completado; energiza ${b.name} a 50 Hz`)}else log('info',`${g.id}: sincronizada en 0 MW (25: condiciones de sincronismo cumplidas)`)}
+function clearBus(bus,msg){let n=0;for(const o of BRS)if(o.on&&!o.hidden&&(o.f===bus||o.t===bus)){o.on=false;n++}
+  for(const g of GENS)if(g.bus===bus&&g.on&&g.type!=='ext'){g.on=false;g.trip='falla en barras';g.p=g.pm=0;n++}
+  for(const L of LOADS)if(L.bus===bus&&L.lon){L.lon=false;n++}
+  for(const d of DCS)if((d.a===bus||d.b===bus)&&d.on){d.on=false;n++}
+  log('bad',`${msg}: se abren ${n} salidas de ${BUSES[bus].name}; la barra queda sin tensión`)}
+/* --- paso del EMS --- */
+function emsStep(dt){const E=S.ems,dd=dt*Math.max(1,S.dayRate),dh=dd/3600;
+  for(const g of GENS){if(!g.starting)continue;if(g.startLeft>0){g.startLeft-=dd;if(g.startLeft<=0)log('info',`${g.id}: caldera y turbina listas, esperando sincronismo`)}
+    if(g.startLeft<=0&&(BUSES[g.bus].isl>=0||g.black))syncUnit(g)}
+  const rf=RATE_F[S.season];for(const br of BRS){if(!br.isTr&&!br.hidden)br.rate=br.rate0*rf;if(br.lockT>0){br.lockT-=dd;if(br.lockT<=0)log('info',`${br.id}: reparación terminada, disponible para el cierre`)}}
+  if(E.market){const hr=Math.floor(S.clk/3600);if(hr!==E.mkHr){E.mkHr=hr;let net=0;
+      for(const n of NBS){if(!n.linked)continue;const d=Math.round((Math.random()-0.5)*800/50)*50,lim=Math.abs(n.nb.sched)+1500;const t0=n.schedT??n.sched;n.schedT=clamp(t0+d,-lim,lim);net+=n.schedT-t0}
+      if(net)log('info',`Mercado: nuevos programas de intercambio desde las ${String(hr%24).padStart(2,'0')}:00 (saldo ${net>0?'+':''}${net} MW de importación)`)}
+    for(const n of NBS){if(n.schedT===undefined)continue;const mx=dd*100/60;n.sched+=clamp(n.schedT-n.sched,-mx,mx)}}
+  E.oltcT+=dt;if(E.oltc&&E.oltcT>5){E.oltcT=0;for(const br of BRS){if(!br.isTr||!br.live)continue;const v=BUSES[br.t].v;if(v<1.0&&br.tap>0.9)br.tap-=0.0125;else if(v>1.045&&br.tap<1.1)br.tap+=0.0125}}
+  if(S.protOn){
+    for(const br of BRS){if(!br.live||br.hidden||br.isPst){br.oos=0;continue}const dth=Math.abs(BUSES[br.f].th-BUSES[br.t].th);
+      if(dth>70){br.oos=(br.oos||0)+dt;if(br.oos>3)tripLine(br,`78: ${br.id} dispara por pérdida de sincronismo (Δθ ${dth.toFixed(0)}°)`)}else br.oos=0}
+    for(let i=0;i<BUSES.length;i++){const b=BUSES[i];if(b.zone==='EXT'||b.isl<0||b.v<=1.15){b.ovT=0;continue}b.ovT=(b.ovT||0)+dt;
+      if(b.ovT>15){b.ovT=0;let pick=null;for(const br of BRS)if(br.live&&!br.hidden&&!br.isTr&&(br.f===i||br.t===i)&&(!pick||Math.abs(br.pf)<Math.abs(pick.pf)))pick=br;
+        if(pick)tripLine(pick,`59: sobretensión sostenida en ${b.name} (${b.v.toFixed(3)} pu), dispara ${pick.id}`)}}}
+  E.n1T+=dt;if(E.n1T>=0.5){E.n1T=0;emsN1()}
+  emsMeasure();
+  const st=emsState();if(st!==E.state){if(E.cand!==st){E.cand=st;E.candT=0}E.candT+=dt;if(E.candT>=1.5||st==='apagon'){log(st==='normal'?'info':st==='alerta'||st==='restab'?'warn':'bad',`Estado del sistema: ${STATE_LBL[st].toUpperCase()}${E.why[0]?' · '+E.why[0]:''}`);E.state=st;E.cand=null}}else E.cand=null;
+  const K=E.kpi;K.T+=dd;const key=E.state==='apagon'&&E.restoring&&!E.reBO?'tR':{normal:'tN',alerta:'tA',emergencia:'tE',apagon:'tB',restab:'tR'}[E.state];K[key]+=dd;
+  K.ens+=Math.max(0,E.expected-E.served)*dh;K.eExp+=E.expected*dh;K.cost+=S.cost*dh;
+  let co2=0,ren=0,curt=0;for(const g of GENS){if(!g.on||BUSES[g.bus].isl<0)continue;if(g.p>0&&!isLoadType(g.type)&&g.type!=='ext')co2+=g.p*g.co2;if(isRen(g)){ren+=g.p;curt+=Math.max(0,(g.pav||0)-g.p)}}
+  K.co2+=co2*dh;K.eRen+=ren*dh;K.curt+=curt*dh;K.aceI+=Math.abs(S.ace)*dd;
+  const M=S.islands[S.main];if(M){const d=Math.abs(M.f-F0);K.fI+=d*dd;if(d<=0.2)K.fIn+=dd}
+  emsIndex();
+  for(let k=0;k<PMU_PAIRS.length;k++){const a=E.ang[k],v=a==null||!E.angSync[k]?0:Math.abs(a);cond('ang'+k,v>35,v>50?'bad':'warn',`WAMS: diferencia angular ${PMU_PAIRS[k][2]} de ${v.toFixed(0)}°`,v<32)}
+  E.ahT+=dt;if(E.ahT>=0.5){E.ahT=0;E.ah.push([S.t,...E.ang]);while(E.ah.length&&E.ah[0][0]<S.t-300)E.ah.shift()}
+  emsMission(dd)}
+/* --- misiones --- */
+function emsMission(dd){const E=S.ems,M=E.mission;if(!M||E.done)return;E.mT+=dd;
+  for(const g of M.goals){if(g.done)continue;const ok=g.test();
+    if(g.hold){g.acc=ok?(g.acc||0)+dd:0;if(g.acc>=g.hold)g.done=true}else if(ok)g.done=true;
+    if(g.done)log('info',`Objetivo cumplido: ${g.t}`)}
+  for(const k of M.keeps)if(!k.fail&&!k.test()){k.fail=true;log('warn',`Condición incumplida: ${k.t}`)}
+  if(M.goals.length&&M.goals.every(g=>g.done)){E.done=true;for(const f of M.finals)f.ok=f.test();
+    const keeps=M.keeps.every(k=>!k.fail),fin=M.finals.every(f=>f.ok),par=!M.par||E.mT<=M.par;
+    E.stars=1+(keeps?1:0)+(fin&&par?1:0);E.report=true;log('info',`Misión completada: ${M.name} · ${E.stars} de 3 estrellas`)}}
+const noBO={t:'Sin recaer en apagón',test:()=>!S.ems.reBO};
+const CASC=['CON-LAN/1','CON-LAN/2','BRU-LAN/1','BRU-LAN/2'];
+const NORTH_W=['EON','EOS','OFFN','EOM','EOB','OFFB'];
+function rebalance(){const h=S.tod/3600;findIslands();updateDevices(0,h);economicDispatch(true);S.init=true;
+  for(let k=0;k<6;k++){updateDevices(0,h);solveNetwork()}
+  for(let pass=0;pass<3;pass++){const I=S.islands[S.main];if(!I||!I.hasExt)break;const ce=G('CE');ce.pref=ce.pset=ce.pm=Math.round(I.peNet);I.pacc=0;for(let k=0;k<3;k++)solveNetwork();
+    if(pass<2)economicDispatch(true,S.imp-S.impSched);for(let k=0;k<3;k++)solveNetwork();S.islands[S.main].pacc=0}
+  S.init=false;S.active={};for(const br of BRS)br.ovt=0;emsN1();emsMeasure()}
+const MISSIONS={
+ black:{mode:'black',dayRate:30,make:()=>({name:'Restablecimiento nacional',par:6*3600,
+   brief:'Alemania está a oscuras y Europa sigue energizada. Restablece desde una interconexión (arriba-abajo) o con arranque en negro (abajo-arriba), toma carga en bloques pequeños y resincroniza las islas.',
+   goals:[{t:'Energiza la primera barra alemana',test:()=>deLive()>0},{t:'Repón 5 GW de demanda',test:()=>S.loadP>=5000},
+     {t:'Lleva tensión a las cuatro zonas de control',test:()=>['AMP','TTG','HZ','TBW'].every(z=>BUSES.some(b=>b.zone===z&&b.isl>=0))},
+     {t:'Repón 25 GW de demanda',test:()=>S.loadP>=25000},
+     {t:'Una sola isla, sincronizada con Europa',test:()=>deIslands()===1&&!!S.islands[S.main]&&S.islands[S.main].hasExt&&deLive()>=40},
+     {t:'Suministra el 90 % de la demanda prevista',test:()=>S.ems.served>=0.9*S.ems.expected}],
+   keeps:[noBO,{t:'Frecuencia siempre entre 49.0 y 51.0 Hz',test:()=>S.islands.every(I=>I.f>49&&I.f<51)}],finals:[]})},
+ normal:{mode:'normal',make:()=>({name:'Operación libre',brief:'Red interconectada con Europa, sin objetivos. Opera a tu ritmo: el índice de operación mide cómo lo haces.',goals:[],keeps:[],finals:[]})},
+ island:{mode:'island',dayRate:10,setup(){S.dist.level=1;S.primOn=true},make:()=>({name:'Alemania aislada',par:0,
+   brief:'Todas las interconexiones AC están abiertas. Sin la inercia de Europa, cada desbalance mueve la frecuencia: mantén la isla estable durante dos horas de reloj con perturbaciones leves. La regulación primaria está activada; el resto es tuyo.',
+   goals:[{t:'Opera la isla durante 2 h de reloj',test:()=>S.ems.mT>=7200}],
+   keeps:[noBO,{t:'Sin deslastre por subfrecuencia',test:()=>!S.ems.shedEver}],
+   finals:[{t:'Frecuencia en 49.8–50.2 Hz al menos el 95 % del tiempo',test:()=>S.ems.kpi.fIn/Math.max(1,S.ems.kpi.T)>=0.95}]})},
+ shift:{mode:'normal',dayRate:10,setup(){S.dist.level=2},make:()=>({name:'Turno con incidencias',par:0,
+   brief:'Turno de mañana de 08:00 a 12:00 con perturbaciones frecuentes: rayos, disparos de bloques, polos HVDC bloqueados, cambios de programa. Termina el turno con la red entera.',
+   goals:[{t:'Llega a las 12:00',test:()=>S.ems.mT>=4*3600}],
+   keeps:[noBO,{t:'Menos de 500 MWh no suministrados',test:()=>S.ems.kpi.ens<500}],
+   finals:[{t:'Índice de operación de 80 o más',test:()=>S.ems.idx>=80}]})},
+ congest:{mode:'normal',dayRate:10,setup(){for(const id of NORTH_W){const g=G(id);g.vmean=g.vw=CONG_W}S.ems.market=false;rebalance()},make:()=>({name:'Congestión norte–sur',par:2*3600,
+   brief:'Un frente de viento llena el norte de eólica barata y los corredores hacia el sur se saturan. Usa redispatch, los enlaces HVDC, los desfasadores y, si no queda otra, recorte renovable.',
+   goals:[{t:'Sin sobrecargas durante 10 min de reloj',hold:600,test:()=>S.ems.maxLoad<=100},{t:'Red N-1 segura durante 10 min de reloj',hold:600,test:()=>S.ems.n1Count===0&&S.ems.maxLoad<=100}],
+   keeps:[{t:'Sin disparos por protección de sobrecarga',test:()=>!S.ems.ovTrip},{t:'Recorte renovable menor de 3 GWh',test:()=>S.ems.kpi.curt<3000}],
+   finals:[{t:'ACE medio menor de 500 MW',test:()=>S.ems.kpi.aceI/Math.max(1,S.ems.kpi.T)<500}]})},
+ cascade:{mode:'normal',dayRate:10,setup(){for(const id of NORTH_W){const g=G(id);g.vmean=g.vw=9}S.ems.market=false;rebalance();S.pending.push({at:S.t+6,fn:()=>{for(const id of CASC){const br=BR(id);tripLine(br,`21: falla permanente en ${id}, bloqueo definitivo`);br.lockT=1500}S.ems.split=true;log('bad','Tormenta en Baja Sajonia: cuatro circuitos de 380 kV hacia Landesbergen fuera de servicio durante 25 min de reloj')}})},make:()=>({name:'Cascada norte–sur',par:90*60,
+   brief:'Hay mucho viento en el norte. A los pocos segundos, una tormenta deja fuera los cuatro circuitos que llegan a Landesbergen. El flujo se desvía a los corredores vecinos y los sobrecarga: evita la cascada y recupera la red.',
+   goals:[{t:'Detén la cascada: sin sobrecargas durante 5 min de reloj',hold:300,test:()=>S.ems.split&&S.ems.maxLoad<=100},
+     {t:'Devuelve al servicio los cuatro circuitos',test:()=>S.ems.split&&CASC.every(id=>BR(id).on)},
+     {t:'Red N-1 segura durante 5 min de reloj',hold:300,test:()=>S.ems.split&&CASC.every(id=>BR(id).on)&&S.ems.n1Count===0}],
+   keeps:[noBO,{t:'Menos de 1000 MWh no suministrados',test:()=>S.ems.kpi.ens<1000},{t:'Sin disparos por sobrecarga',test:()=>!S.ems.ovTrip}],finals:[]})}};
+let CONG_W=10;
+function missionStart(id){const def=MISSIONS[id]||MISSIONS.normal;init(def.mode);if(def.dayRate)S.dayRate=def.dayRate;if(def.setup)def.setup();
+  const M=def.make();M.id=MISSIONS[id]?id:'normal';S.ems.mission=M;Object.assign(S.ems.kpi,{T:0,tN:0,tA:0,tE:0,tB:0,tR:0,ens:0,eExp:0,cost:0,co2:0,curt:0,eRen:0,aceI:0,fI:0,fIn:0,trips:0});S.ems.ovTrip=false;
+  emsN1();emsMeasure();S.ems.state=emsState();log('info',`Misión: ${M.name}. ${M.brief}`)}
+/* --- perturbaciones con relés --- */
+DIST.lineTrip.lbl='Descarga atmosférica en línea (21 + 79)';
+DIST.lineTrip.run=function(id){const br=BR(id);if(!br||!br.on)return;tripLine(br,`21: descarga atmosférica en ${id}, disparo en zona 1 (80 ms)`);
+  if(Math.random()<0.7)S.pending.push({at:S.t+1,fn:()=>{if(closeBranch(br))log('info',`79: ${id} reenganchada con éxito tras 1 s`)}});
+  else S.pending.push({at:S.t+1,fn:()=>{br.lockT=1800;log('warn',`79: reenganche de ${id} sin éxito; falla permanente, bloqueo definitivo`)}})};
+DIST.permFault={lbl:'Falla permanente en línea (bloqueo 79)',targets:DIST.lineTrip.targets,run(id){const br=BR(id);if(!br||!br.on)return;tripLine(br,`21: falla en ${id}, disparo en zona 1. 79: reenganche sin éxito, bloqueo definitivo`);br.lockT=2700}};
+DIST.brkFail={lbl:'Falla con fallo de interruptor (50BF)',targets:DIST.lineTrip.targets,run(id){const br=BR(id);if(!br||!br.on)return;const bus=BUSES[br.f].zone==='EXT'?br.t:br.f;
+  tripLine(br,`21: falla en ${id}; el interruptor de ${BUSES[bus].name} no abre`);br.lockT=2700;clearBus(bus,'50BF: despeje de respaldo en 250 ms')}};
+DIST.busFault={lbl:'Falla en barras (87B)',targets:()=>BUSES.filter(b=>b.zone!=='EXT'&&b.isl>=0).map(b=>b.key),run(key){clearBus(BK[key],'87B: falla en barras, disparo diferencial en 20 ms')}};
+Object.assign(DIST_W,{permFault:1,brkFail:0.3,busFault:0.3});
 
 </script>
 <script>
@@ -1071,7 +1288,7 @@ function operate(brk){const [k,id]=brk.split(':');
   else if(k==='dc'){const d=DC(id);d.on=!d.on;log(d.on?'info':'warn',`Operador: ${d.on?'desbloquea':'bloquea'} el enlace ${d.name}`)}
   solveNetwork();updateUI()}
 const loadNow=L=>L.pmax*L.scale*loadProf(L,S.tod/3600)*S.demand*(1-L.shed);
-function toggleDev(g){
+function toggleDev0(g){
   const b=BUSES[g.bus];
   if(g.on){g.on=false;g.trip='';g.agcSh=0;g.gov=0;log('warn',`Operador: abre el interruptor de ${g.id} (${Math.abs(g.p).toFixed(0)} MW fuera)`);g.p=0;g.pm=0;return}
   if(b.isl<0){
@@ -1099,7 +1316,7 @@ function bindBrk(id,brk){const b=document.getElementById(id);b.style.touchAction
   b.addEventListener('click',()=>{const now=Date.now();if(b._t&&now-b._t<450){b._t=0;clearTimeout(b._h);operate(brk);return}b._t=now;clearTimeout(b._h);b._h=setTimeout(()=>toast('Doble clic para operar el interruptor.'),470)})}
 
 /* ================= ventanas emergentes ================= */
-function pillFor(g){const b=BUSES[g.bus];
+function pillFor(g){const b=BUSES[g.bus];if(g.starting)return[g.startLeft>0?'ARRANCANDO · '+fmtDur(g.startLeft):'LISTA · ESPERA TENSIÓN','var(--warn)'];
   if(!g.on)return g.trip?['DISPARADA · '+g.trip.toUpperCase(),'var(--bad)']:['FUERA DE SERVICIO','var(--dim)'];
   if(b.isl<0)return['SIN TENSIÓN','var(--bad)'];
   if(g.cutout)return['PARADA POR VIENTO','var(--warn)'];
@@ -1134,13 +1351,13 @@ function bindDev(g){const i=g.id,t=g.type;bindBrk('pb','dev:'+i);
   bindT(`d-${i}-ffr`,on=>{g.ffr=on})}
 let logT=null;function logSet(msg){clearTimeout(logT);logT=setTimeout(()=>log('info','Operador: '+msg),600)}
 function updDev(g){const b=BUSES[g.bus],live=g.on&&b.isl>=0,t=g.type;
-  const bk=$('#pb');bk.classList.toggle('off',!g.on);T('pb-t',g.on?'Interruptor cerrado · doble clic para abrir':(b.isl<0&&g.sync&&g.black?'Abierto · doble clic: arranque en negro':'Interruptor abierto · doble clic para cerrar'));
+  const bk=$('#pb');bk.classList.toggle('off',!g.on);T('pb-t',g.starting?'Arrancando · doble clic para cancelar':g.on?'Interruptor cerrado · doble clic para abrir':(b.isl<0&&g.sync&&g.black?'Abierto · doble clic: arranque en negro':'Interruptor abierto · doble clic para cerrar'));
   const [st,col]=pillFor(g),pe=$('#d-st');pe.textContent=st;pe.style.color=col;
   const P=isLoadType(t)?-g.p:g.p;T('d-p',live?fmtMW(P):'—');T('d-q',live?g.q.toFixed(0)+' MVAr':'—');T('d-i',live&&b.v>0?Math.round(Math.hypot(g.p,g.q)/(Math.sqrt(3)*b.v*b.kv)*1000)+' A':'—');
   const mf=$('#d-mf');if(mf){const lo=g.plo,hi=g.phi,span=hi-lo||1,p=live?g.p:0;const z=(0-lo)/span*100,v=(p-lo)/span*100;mf.style.left=Math.min(z,v)+'%';mf.style.width=Math.abs(v-z)+'%';
     $('#d-ms').style.left=`calc(${clamp(((t==='wind'||t==='off'||t==='solar'?Math.min(g.curt,g.pav||0):g.pref)-lo)/span*100,0,100)}% - 1px)`}
   let x='';
-  if(g.sync&&t!=='syncon')x=`Pm ${g.pm.toFixed(0)} · rampa ${g.pset.toFixed(0)} → ${g.pref.toFixed(0)} MW a ${g.ramp.toFixed(1)} MW/s · disponible ${pavail(g)} MW${g.out?` (${g.out} MW en reparación)`:''} · ${g.cost} €/MWh · V ${b.v.toFixed(3)} pu`;
+  if(g.sync&&t!=='syncon')x=`Pm ${g.pm.toFixed(0)} · rampa ${g.pset.toFixed(0)} → ${g.pref.toFixed(0)} MW a ${(g.ramp*60).toFixed(0)} MW/min de reloj · disponible ${pavail(g)} MW${g.out?` (${g.out} MW en reparación)`:''} · ${g.cost} €/MWh · V ${b.v.toFixed(3)} pu`;
   if(t==='phs')x+=` · embalse ${(g.soc*100).toFixed(1)} % (${(g.soc*g.emax/1000).toFixed(1)} GWh)`;
   if(t==='syncon'||t==='statcom')x=`Q ${g.qmin}…${g.qmax} MVAr · V ${b.v.toFixed(3)} pu`;
   if(t==='wind'||t==='off')x=`Viento ${g.vw.toFixed(1)} m/s · disponible ${fmtMW(g.pav||0)}${live&&g.p<(g.pav||0)-5?' · recortada':''}${t==='off'&&!g.ac?' · exporta por HVDC':''}`;
@@ -1159,7 +1376,7 @@ function brHTML(br){const A=BUSES[br.f],B=BUSES[br.t];const sib=BRS.filter(r=>r.
    <div><span class="lbl">Pérdidas</span><span class="mono" id="e-ls">—</span></div><div><span class="lbl">Δθ</span><span class="mono" id="e-dth">—</span></div></div>
    <div class="sync" id="e-sync" hidden><svg viewBox="-50 -50 100 100" width="96" height="96"><circle r="44" fill="var(--panel-2)" stroke="var(--rule)"/><path d="M0,-44 L0,-34" stroke="var(--ok)" stroke-width="3"/><path d="M-15,-41 A44,44 0 0 1 15,-41" stroke="var(--ok)" stroke-width="5" fill="none"/><line id="e-syn" x1="0" y1="0" x2="0" y2="-38" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><circle r="4" fill="var(--ink)"/></svg>
      <div><div class="lbl">Sincronoscopio</div><div class="mono" id="e-syt" style="font-size:13px"></div><div class="meta" id="e-sym"></div></div></div>
-   <div class="meta" id="e-pr"></div>
+   <div class="meta" id="e-pr"></div><div class="meta" id="e-rem"></div>
    ${br.isTr?spHTML('e-tap','Relación de tomas (OLTC)',0.9,1.1,br.tap,'',4,[0.0025,0.0125,0.05]):''}
    ${br.isPst?spHTML('e-phi','Ángulo del desfasador',-30,30,br.phi,'°',1,[0.5,2,10]):''}
    ${sib.length?`<div class="linklist">${sib.map(r=>`<button data-br="${r.id}"><span>Otra terna: ${r.id}</span><span class="mono" id="e-sib-${r.id.replace('/','_')}"></span></button>`).join('')}</div>`:''}`}
@@ -1171,8 +1388,8 @@ function updBr(br){$('#pb').classList.toggle('off',!br.on);T('pb-t',br.on?'Inter
   T('e-ls',br.live?(br.pf+br.pt).toFixed(1)+' MW':'—');T('e-dth',br.live?(BUSES[br.f].th-BUSES[br.t].th).toFixed(2)+'°':'—');
   const sc=syncCheck(br),sy=$('#e-sync');sy.hidden=!sc||br.on;
   if(sc&&!br.on){$('#e-syn').setAttribute('transform',`rotate(${sc.dth})`);T('e-syt',`Δf ${sgn(sc.df*1000)} mHz · ΔV ${sgn(sc.dv*100,1)} % · Δθ ${sgn(sc.dth)}°`);T('e-sym',sc.ok?'Condiciones de sincronismo cumplidas: puedes cerrar.':'Fuera de sincronismo: ajusta la frecuencia y la tensión de la isla.')}
-  T('e-pr',!br.on?'Interruptor abierto.':!br.live?'Cerrado pero sin tensión.':!S.protOn?'Protección de sobrecarga bloqueada.':br.loading>100?`Sobrecarga: la protección dispara en ~${Math.max(0,(20-br.ovt)/((br.loading/100)**2-1)).toFixed(0)} s si no la alivias.`:'Protección de sobrecarga en vigilancia.');
-  syncSp('e-tap',br.tap,4);syncSp('e-phi',br.phi,1);
+  T('e-pr',br.lockT>0?`En descargo por falla permanente: disponible en ${fmtDur(br.lockT)} de reloj.`:!br.on?'Interruptor abierto.':!br.live?'Cerrado pero sin tensión.':!S.protOn?'Protección de sobrecarga bloqueada.':br.loading>100?`Sobrecarga: la protección dispara en ~${Math.max(0,(20-br.ovt)/((br.loading/100)**2-1)).toFixed(0)} s si no la alivias.`:'Protección de sobrecarga en vigilancia.');
+  H('e-rem',remText(br));syncSp('e-tap',br.tap,4);syncSp('e-phi',br.phi,1);
   for(const r of BRS)if(r.cor===br.cor&&r!==br)T('e-sib-'+r.id.replace('/','_'),r.on?(r.live?r.loading.toFixed(0)+' %':'sin tensión'):'abierta')}
 
 function busHTML(b){const i=BK[b.key];const cs=BRS.filter(r=>!r.hidden&&(r.f===i||r.t===i));const dv=GENS.filter(g=>g.bus===i&&g.type!=='ext'),ld=LOADS.filter(L=>L.bus===i),dc=DCS.filter(d=>d.a===i||d.b===i);
@@ -1186,7 +1403,7 @@ function busHTML(b){const i=BK[b.key];const cs=BRS.filter(r=>!r.hidden&&(r.f===i
    ${dv.map(g=>`<button data-k="dev" data-id="${g.id}"><span>${g.id} · ${TYPES[g.type].lbl}</span><span class="mono" id="b-g-${g.id}"></span></button>`).join('')}</div>`}
 function bindBus(){$('#pop').querySelectorAll('.linklist button').forEach(x=>x.addEventListener('click',()=>{const r=x.getBoundingClientRect();openPop(x.dataset.k,x.dataset.id,r.left,r.top)}))}
 const iA=(p,q,v,kv)=>v>0?Math.hypot(p,q)/(Math.sqrt(3)*v*kv)*1000:0;
-function updBus(b){const i=BK[b.key],live=b.isl>=0;T('b-v',live?b.v.toFixed(4)+' pu':'0');T('b-kv',live?(b.v*b.kv).toFixed(1)+' kV':'0 kV');T('b-th',live?b.th.toFixed(2)+'°':'—');
+function updBus(b){const i=BK[b.key],live=b.isl>=0;T('b-v',live?b.v.toFixed(4)+' pu':'0');T('b-kv',live?(b.v*b.kv).toFixed(1)+' kV':'0 kV');T('b-th',live?pmuRel(b).toFixed(2)+'° (ref. '+S.ems.refKey+')':'—');
   T('b-is',!live?'sin tensión':S.islands[b.isl].hasExt?'Europa continental':'isla de '+S.islands[b.isl].slack.id);
   for(const r of BRS){if(r.hidden||(r.f!==i&&r.t!==i))continue;const here=r.f===i,p=here?r.pf:r.pt,ia=here?r.ia:r.ib;T('b-c-'+r.id.replace('/','_'),r.live?`${Math.round(ia)} A · ${p>=0?'sale':'entra'} ${Math.abs(p).toFixed(0)} MW`:r.on?'sin tensión':'abierta')}
   for(const d of DCS)if(d.a===i||d.b===i){const pin=d.a===i?-d.p:d.p;T('b-dc-'+d.id,d.live?`${pin>=0?'entra':'sale'} ${Math.abs(d.p).toFixed(0)} MW`:'bloqueado')}
@@ -1225,7 +1442,7 @@ function nbHTML(n){const ties=BRS.filter(r=>r.tie&&(r.t===BK[n.key]||r.f===BK[n.
    ${spHTML('n-sc','Programa de intercambio (+ importación de Alemania)',-6000,6000,n.sched,'MW')}
    <div class="meta">El programa es lo que se pactó en el mercado. El flujo físico se reparte según las impedancias de toda la red: la diferencia son los flujos de lazo.</div>
    <div class="linklist">${ties.map(r=>`<button data-br="${r.id}"><span>${r.isPst?'PST ':''}${r.id}</span><span class="mono" id="n-t-${r.id.replace('/','_')}"></span></button>`).join('')}</div>`}
-function bindNb(n){bindSp('n-sc',-6000,6000,0,v=>{n.sched=v},v=>logSet(`programa con ${n.name} → ${v} MW`));$('#pop').querySelectorAll('.linklist button').forEach(x=>x.addEventListener('click',()=>{const r=x.getBoundingClientRect();openPop('br',x.dataset.br,r.left,r.top)}))}
+function bindNb(n){bindSp('n-sc',-6000,6000,0,v=>{n.sched=v;n.schedT=v},v=>logSet(`programa con ${n.name} → ${v} MW`));$('#pop').querySelectorAll('.linklist button').forEach(x=>x.addEventListener('click',()=>{const r=x.getBoundingClientRect();openPop('br',x.dataset.br,r.left,r.top)}))}
 const nbFlow=n=>{let f=0;for(const r of BRS)if(r.tie&&r.live&&(r.t===BK[n.key]||r.f===BK[n.key]))f+=r.t===BK[n.key]?-r.pf:-r.pt;return f};
 function updNb(n){T('n-f',sgn(nbFlow(n))+' MW');T('n-s',sgn(n.sched)+' MW');for(const r of BRS)if(r.tie&&(r.t===BK[n.key]||r.f===BK[n.key]))T('n-t-'+r.id.replace('/','_'),r.on?(r.live?`${sgn(-r.pf)} MW · ${r.loading.toFixed(0)} %`:'sin tensión'):'abierta')}
 
@@ -1308,9 +1525,9 @@ function sysHTML(){return `
    <li><b>Desde Europa:</b> cierra una interconexión (por ejemplo KUE-CH o PLE-AT) con doble clic en su interruptor. La barra alemana queda energizada desde el vecino.</li>
    <li><b>O en negro:</b> el bombeo (BOMO, BOMB), la hidro de pasada (HIDB, HIDR) y las turbinas de gas de reserva (TGS, TGB) arrancan sin red. Forman una isla propia a 50 Hz.</li>
    <li><b>Energiza corredores</b> de 380 kV y toma carga en bloques pequeños: baja la escala del alimentador antes de cerrarlo.</li>
-   <li><b>Sincroniza las islas</b> cerrando el circuito que las une cuando el sincronoscopio marque Δf &lt; 0.2 Hz y Δθ &lt; 20°.</li>
+   <li><b>Sincroniza las islas</b> cerrando el circuito que las une cuando el sincronoscopio marque Δf &lt; 0.15 Hz y Δφ &lt; 20°.</li>
    <li><b>Sincroniza las grandes unidades</b> (lignito, hulla, ciclos combinados): entran en 0 MW y suben con su rampa.</li></ol></div>
-  <div class="sec"><h3>Reiniciar</h3><div class="row"><button class="btn danger" data-rs="black">Apagón total</button><button class="btn" data-rs="normal">Operación normal</button><button class="btn" data-rs="island">Alemania aislada</button></div>
+  <div class="sec"><h3>Misiones</h3><button class="btn primary" id="s-menu" style="justify-self:start">Elegir misión</button>
    <div class="meta">Modelo simplificado inspirado en la red real (2026): ubicaciones, corredores y enlaces aproximados; potencias agregadas por región. SuedLink, SuedOstLink, Ultranet y A-Nord se modelan como si ya operaran.</div></div>`}
 function bindSys(){
   $('#s-day').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{S.dayRate=+b.dataset.d;$('#s-day').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))}));
@@ -1370,13 +1587,13 @@ function updTrend(){
   const top=BRS.filter(r=>r.live&&!r.hidden).sort((a,b)=>b.loading-a.loading).slice(0,8);
   const tl=$('#topL');const h=top.map(r=>`<button data-br="${r.id}"><span>${r.id}</span><span class="mono" style="color:${r.loading>100?'var(--bad)':r.loading>90?'var(--warn)':'var(--dim)'}">${r.loading.toFixed(0)} % · ${Math.abs(r.pf).toFixed(0)} MW</span></button>`).join('');
   if(tl.innerHTML!==h){tl.innerHTML=h;tl.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{const r=b.getBoundingClientRect();openPop('br',b.dataset.br,r.left,r.top)}))}}
-function alarmHTML(){return `<div class="sec"><h3>Activas</h3><ul class="allist act" id="alAct"></ul></div><div class="sec"><div class="row" style="justify-content:space-between"><h3>Registro de eventos</h3><button class="btn" id="alClear" style="padding:3px 8px;font-size:11px">Limpiar</button></div><ul class="allist" id="alList"></ul></div>`}
+function alarmHTML(){return `<div class="sec"><div class="row" style="justify-content:space-between"><h3>Activas</h3><button class="btn" id="alAck" style="padding:3px 8px;font-size:11px">Reconocer todas</button></div><ul class="allist act" id="alAct"></ul></div><div class="sec"><div class="row" style="justify-content:space-between"><h3>Registro de eventos</h3><button class="btn" id="alClear" style="padding:3px 8px;font-size:11px">Limpiar</button></div><ul class="allist" id="alList"></ul></div>`}
 function updAlarm(){const C={info:'var(--kv380)',warn:'var(--warn)',bad:'var(--bad)'};
-  const act=Object.values(S.active).sort((a,b)=>(a.level==='bad'?0:1)-(b.level==='bad'?0:1));H('alAct',act.length?act.map(a=>`<li><i style="background:${C[a.level]}"></i><span>${a.msg}</span></li>`).join(''):'<li class="empty">Sin alarmas activas.</li>');
+  const act=Object.values(S.active).sort((a,b)=>(a.level==='bad'?0:1)-(b.level==='bad'?0:1));H('alAct',act.length?act.map(a=>`<li><i style="background:${C[a.level]}"></i><span style="${a.ack?'color:var(--dim)':'font-weight:600'}">${a.msg}</span></li>`).join(''):'<li class="empty">Sin alarmas activas.</li>');
   if(UI.logVer!==S.logVer){UI.logVer=S.logVer;H('alList',S.log.length?S.log.map(l=>`<li><span class="mono">${hhmm(l.t)}</span><i style="background:${C[l.level]}"></i><span>${l.msg}</span></li>`).join(''):'<li class="empty">Sin eventos.</li>')}}
-function openDrawer(k){UI.drawer=k;$('#drawer').hidden=false;$('#drTitle').textContent={trend:'Tendencias',sys:'Sistema',alarm:'Alarmas',dist:'Perturbaciones'}[k];
-  $('#drBody').innerHTML=k==='trend'?trendHTML():k==='sys'?sysHTML():k==='dist'?distHTML():alarmHTML();
-  if(k==='trend')buildGauge();if(k==='sys')bindSys();if(k==='dist')bindDist();if(k==='alarm'){UI.logVer=-1;$('#alClear').addEventListener('click',()=>{S.log=[];S.logVer++})}
+function openDrawer(k){UI.drawer=k;$('#drawer').hidden=false;$('#drTitle').textContent={trend:'Tendencias',sys:'Sistema',alarm:'Alarmas',dist:'Perturbaciones',sec:'Seguridad',wams:'WAMS · fasores'}[k];
+  $('#drBody').innerHTML=k==='sec'?secHTML():k==='wams'?wamsHTML():k==='trend'?trendHTML():k==='sys'?sysHTML():k==='dist'?distHTML():alarmHTML();
+  if(k==='sec')bindSec();if(k==='wams')bindWams();if(k==='trend')buildGauge();if(k==='sys')bindSys();if(k==='dist')bindDist();if(k==='alarm'){UI.logVer=-1;$('#alClear').addEventListener('click',()=>{S.log=[];S.logVer++})}
   document.querySelectorAll('[data-dr]').forEach(b=>b.classList.toggle('on',b.dataset.dr===k));updateUI()}
 function closeDrawer(){UI.drawer=null;$('#drawer').hidden=true;document.querySelectorAll('[data-dr]').forEach(b=>b.classList.remove('on'))}
 
@@ -1398,7 +1615,7 @@ function updMon(){const M=S.islands[S.main];const deLive=BUSES.some(b=>b.zone!==
 function lCol(br,base){if(!br.live)return 'var(--faint)';if(br.loading>100)return 'var(--bad)';if(br.loading>90)return 'var(--warn)';return base}
 function updateUI(){
   T('clock',hhmm(S.tod));T('clockLbl',S.dayRate===1?'Hora · tiempo real':`Hora · día ×${S.dayRate}`);
-  $('#btnPause').textContent=UI.paused?'Reanudar':'Pausa';
+  {const b=$('#btnPause');b.textContent=UI.paused?(S.t<0.05?'▶ Empezar':'▶ Reanudar'):'Pausa';b.classList.toggle('go',UI.paused)}
   const act=Object.values(S.active),nb=act.filter(a=>a.level==='bad').length;const bell=$('#bell');bell.classList.toggle('bad',nb>0);bell.classList.toggle('warn',nb===0&&act.length>0);T('bellN',String(act.length));
   const deDead=!BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);$('#deadband').hidden=!deDead;if(deDead)T('dbMsg',(S.lastBO?S.lastBO[0].toUpperCase()+S.lastBO.slice(1)+' ':'')+'Cierra una interconexión o arranca en negro bombeo, hidro o turbinas de gas.');
   updMon();
@@ -1413,11 +1630,11 @@ function updateUI(){
   if(REF.off){const g=G('OFFN');REF.off.line.classList.toggle('off',!(g.on&&BUSES[g.bus].isl>=0))}
   for(const b of BUSES){const R=REF.bus[b.key];if(!R){if(b.nb){const n=REF.nb[b.key];const f=nbFlow(b);n.fl.textContent=BRS.some(r=>r.tie&&r.live&&(r.t===BK[b.key]))?`${sgn(f)} MW`:''}continue}
     const live=b.isl>=0;R.bar.setAttribute('fill',live?KVC[b.kv]:'var(--faint)');let t='';
-    if(live){if(UI.busMode==='v')t=b.v.toFixed(3);else if(UI.busMode==='kv')t=(b.v*b.kv).toFixed(1)+' kV'}if(R.val.textContent!==t)R.val.textContent=t;
+    if(live){if(UI.busMode==='v')t=b.v.toFixed(3);else if(UI.busMode==='kv')t=(b.v*b.kv).toFixed(1)+' kV';else if(UI.busMode==='th')t=pmuRel(b).toFixed(1)+'°'}if(R.val.textContent!==t)R.val.textContent=t;
     const lv=live?vLevel(b.v):'';R.val.setAttribute('fill',lv==='bad'?'var(--bad)':lv==='warn'?'var(--warn)':'var(--ink)');setAlarm(R.al,lv||null)}
   for(const g of GENS){const R=REF.dev[g.id];if(!R)continue;const live=g.on&&BUSES[g.bus].isl>=0;R.gl.style.opacity=live?1:.38;
     const c=live?'var(--ok)':g.on?'var(--faint)':'var(--panel)';R.bq.setAttribute('fill',c);R.bq.setAttribute('stroke',g.on?(live?'var(--ok)':'var(--faint)'):'var(--dim)');
-    let t='';if(live){if(g.type==='cap'||g.type==='reac'||g.type==='syncon'||g.type==='statcom')t=`${g.q.toFixed(0)} Mvar`;else t=(isLoadType(g.type)?-g.p:g.p).toFixed(0)}
+    let t=g.starting?(g.startLeft>0?fmtDur(g.startLeft):'lista'):'';if(live){if(g.type==='cap'||g.type==='reac'||g.type==='syncon'||g.type==='statcom')t=`${g.q.toFixed(0)} Mvar`;else t=(isLoadType(g.type)?-g.p:g.p).toFixed(0)}
     if(R.pv.textContent!==t)R.pv.textContent=t;
     let a=null;if(!g.on&&g.trip&&g.trip!=='apagón')a='bad';else if(live&&((g.sync&&g.pe>pavail(g)+5)))a='bad';else if(live&&(g.qlim||g.cutout||(g.sync&&g.pminT>0&&g.pset<g.pminT-1)||(g.emax&&g.soc<0.08)))a='warn';setAlarm(R.al,a);
     if(R.rot===undefined)continue;
@@ -1425,7 +1642,7 @@ function updateUI(){
   for(const L of LOADS){const R=REF.dev[L.id];if(!R)continue;const live=L.lon&&BUSES[L.bus].isl>=0;R.gl.style.opacity=live?1:.38;R.bq.setAttribute('fill',live?'var(--ok)':L.lon?'var(--faint)':'var(--panel)');R.bq.setAttribute('stroke',L.lon?(live?'var(--ok)':'var(--faint)'):'var(--dim)');
     const t=live?L.p.toFixed(0):'';if(R.pv.textContent!==t)R.pv.textContent=t;setAlarm(R.al,L.shed>0?'warn':null)}
   updatePop();
-  if(UI.drawer==='trend')updTrend();else if(UI.drawer==='alarm')updAlarm();else if(UI.drawer==='sys')updSys();else if(UI.drawer==='dist')updDist()}
+  if(UI.drawer==='trend')updTrend();else if(UI.drawer==='alarm')updAlarm();else if(UI.drawer==='sys')updSys();else if(UI.drawer==='dist')updDist();else if(UI.drawer==='sec')updSec();else if(UI.drawer==='wams')updWams();updEms()}
 function animate(dt){if(reduceMotion)return;
   for(const r of BRS){const R=REF.circ[r.id];if(!R)continue;if(!r.live||Math.abs(r.pf)<5){R.fl.style.visibility='hidden';continue}R.fl.style.visibility='visible';const sp=12+60*Math.min(r.loading/100,1.6);R.off+=(r.pf>0?-1:1)*sp*dt;R.off%=1000;R.fl.setAttribute('stroke-dashoffset',R.off.toFixed(1))}
   for(const d of DCS){const R=REF.dc[d.id];if(!d.live||Math.abs(d.p)<5){R.fl.style.visibility='hidden';continue}R.fl.style.visibility='visible';R.off+=(d.p>0?-1:1)*40*dt;R.off%=1000;R.fl.setAttribute('stroke-dashoffset',R.off.toFixed(1))}
@@ -1437,7 +1654,7 @@ const DT=0.1;let last=performance.now(),acc=0,uiAcc=0;
 function loop(now){const dtr=Math.min(0.1,(now-last)/1000);last=now;requestAnimationFrame(loop);
   try{if(UI.started&&!UI.paused){acc+=dtr*UI.speed;let k=0;const t0=performance.now();while(acc>=DT&&k<8){step(DT);acc-=DT;k++;if(performance.now()-t0>40){acc=0;break}}}
     animate(UI.paused?0:dtr*Math.min(UI.speed*2,2));uiAcc+=dtr;if(uiAcc>0.15){uiAcc=0;updateUI()}}catch(e){console.error(e)}}
-function resetAll(mode){closePop();init(mode);buildSLD();updateUI();if(UI.drawer)openDrawer(UI.drawer)}
+function resetAll(mode){closePop();missionStart(mode);UI.paused=true;seenBad.clear();buildSLD();updateUI();if(UI.drawer)openDrawer(UI.drawer)}
 
 /* ================= monitor flotante y pantalla completa ================= */
 function wireMon(){const m=$('#mon'),h=$('#monH');let d=null;
@@ -1464,9 +1681,133 @@ function wire(){
   $('#drClose').addEventListener('click',closeDrawer);
   $('#dbGuide').addEventListener('click',()=>{openDrawer('sys');const g=document.getElementById('guide');if(g)g.scrollIntoView({block:'start'})});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(UI.pop)closePop();else if(UI.drawer)closeDrawer()}});
-  $('#start').querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{$('#start').hidden=true;resetAll(b.dataset.mode);fitView();UI.started=true}));
-  wireView();wireMon();
+  $('#start').querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{$('#start').hidden=true;resetAll(b.dataset.mode);fitView();UI.started=true;toast('Misión en pausa: estudia la situación y pulsa Empezar (barra espaciadora).')}));
+  wireView();wireMon();wireEms();
   init('black');buildSLD();fitView();updateUI();requestAnimationFrame(loop)}
+/* ======================= UI del EMS ======================= */
+const fmtDur=s=>s>=3600?`${Math.floor(s/3600)} h ${String(Math.round(s%3600/60)).padStart(2,'0')} min`:s>=90?`${Math.round(s/60)} min`:`${Math.max(0,Math.round(s))} s`;
+function toggleDev(g){const E=S.ems;
+  if(!g.on&&g.sync&&g.type!=='ext'&&E&&E.startT){
+    if(g.starting){g.starting=false;log('warn',`Operador: cancela el arranque de ${g.id}`);return}
+    const b=BUSES[g.bus];if(b.isl<0&&!g.black){log('warn',`${g.id}: la barra ${b.name} está sin tensión y la unidad no tiene arranque autónomo. Energízala primero.`);toast(`${g.id} necesita una barra energizada.`);return}
+    g.starting=true;g.startLeft=START_T[g.type]||600;log('info',`Operador: orden de arranque a ${g.id}; lista en ${fmtDur(g.startLeft)} de reloj`);return}
+  toggleDev0(g)}
+function fitView(){const r=$('#sld').getBoundingClientRect(),m=$('#mon'),q=$('#mis'),big=r.width>1100;
+  const rl=big&&!m.classList.contains('min')&&m.offsetLeft<60?m.offsetWidth+16:0,rr=big&&!q.hidden&&!q.classList.contains('min')&&q.offsetLeft>r.width-q.offsetWidth-60?q.offsetWidth+16:0;
+  const W=Math.max(200,r.width-rl-rr),Hh=r.height,sc=Math.min(W/VB0.w,Hh/VB0.h);
+  VB={x:VB0.x-rl/sc-(W/sc-VB0.w)/2,y:VB0.y-(Hh/sc-VB0.h)/2,w:r.width/sc,h:Hh/sc};applyView()}
+function fcResidual(dh){const hr=((S.tod/3600+dh)%24+24)%24,z=SEASON[S.season];let l=0;for(const L of LOADS)l+=L.pmax*L.scale*loadProf(L,hr);l*=S.demand;let r=0;
+  for(const g of GENS){if(g.type==='solar'){const sh=(hr<=z.rise||hr>=z.set)?0:Math.pow(Math.sin(Math.PI*(hr-z.rise)/(z.set-z.rise)),1.3);r+=Math.min(g.pmax,g.pmax*z.irr*g.irr*sh/1000*0.85)}else if(g.type==='wind'||g.type==='off')r+=g.pmax*Math.max(0,windCurve(g.vmean))}return l-r}
+function remText(br){let h='<span class="lbl">Relés</span> 21 distancia · 79 reenganche · 49 sobrecarga · 25 sincro-check · 78 pérdida de sincronismo';
+  if(!br.live||br.loading<60)return h;const r=emsRemedial(br);if(!r)return h;const out=[];
+  if(r.up&&r.dn&&r.up.e-r.dn.e<-0.02)out.push(`Redispatch: bajar ${r.dn.id}${r.dn.ren?' (recorte)':''} y subir ${r.up.id} alivia ${(-(r.up.e-r.dn.e)*100).toFixed(0)} MW por cada 100 MW.`);
+  if(r.dc&&Math.abs(r.dc.e)>0.02)out.push(`HVDC: ${r.dc.e<0?'subir':'bajar'} la consigna de ${r.dc.name} alivia ${(Math.abs(r.dc.e)*100).toFixed(0)} MW por cada 100 MW.`);
+  return (out.length?'<span class="lbl">Medidas que alivian este circuito</span><br>'+out.join('<br>')+'<br>':'')+h}
+/* ---- sonido ---- */
+let AC=null;function beep(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;for(const [f,d] of [[880,0],[660,0.16]]){const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0.05,t+d);g.gain.exponentialRampToValueAtTime(0.001,t+d+0.14);o.connect(g);g.connect(AC.destination);o.start(t+d);o.stop(t+d+0.15)}}catch(e){}}
+const seenBad=new Set();
+/* ---- estado, misión e informe ---- */
+const STARS=n=>'★'.repeat(n)+'☆'.repeat(3-n);
+function updEms(){const E=S.ems;if(!E)return;
+  const p=$('#stPill'),lbl=STATE_LBL[E.state].toUpperCase();if(p.textContent!==lbl)p.textContent=lbl;p.className='btn state s-'+E.state+(UI.drawer==='sec'?' on':'');
+  let unBad=false;for(const k in S.active){const a=S.active[k];if(!a.ack&&a.level==='bad'){unBad=true;if(!seenBad.has(k)){seenBad.add(k);if(UI.sound)beep()}}}
+  for(const k of seenBad)if(!S.active[k])seenBad.delete(k);
+  $('#bell').classList.toggle('unack',unBad);
+  const M=E.mission;$('#mis').hidden=!M;if(!M)return;
+  T('misT',M.goals.length?fmtDur(E.mT)+(M.par?' / '+fmtDur(M.par):''):'');
+  T('misN',M.name+(E.done?' · '+STARS(E.stars):''));
+  const li=[];for(const g of M.goals)li.push(`<li class="${g.done?'ok':''}"><i>${g.done?'✓':'○'}</i><span>${g.t}${g.hold&&!g.done?` <em>${Math.round((g.acc||0)/g.hold*100)} %</em>`:''}</span></li>`);
+  for(const k of M.keeps)li.push(`<li class="${k.fail?'ko':'keep'}"><i>${k.fail?'✗':'■'}</i><span>${k.t}</span></li>`);
+  for(const f of M.finals)li.push(`<li class="${E.done?(f.ok?'ok':'ko'):'keep'}"><i>${E.done?(f.ok?'✓':'✗'):'★'}</i><span>${f.t}</span></li>`);
+  H('misG',li.join('')||'<li class="keep"><i>■</i><span>Sin objetivos: opera a tu ritmo.</span></li>');
+  H('misI',`<span class="${E.idx>=80?'st-ok':E.idx>=65?'st-warn':'st-bad'}">${E.idx.toFixed(0)}</span><small>nota ${E.grade}</small>`);
+  H('misR',`<span class="${E.resUp<E.refInc?'st-warn':''}">${(E.resUp/1000).toFixed(1)}</span> / ${(E.resDn/1000).toFixed(1)}<small>GW</small>`);
+  H('misN1',E.sens?`<span class="${E.n1Count?'st-warn':'st-ok'}">${E.n1Count?E.n1Count+' críticas':'seguro'}</span>`:'—');
+  const r0=fcResidual(0);H('misF',`${sgn((fcResidual(0.5)-r0)/1000,1)} / ${sgn((fcResidual(1)-r0)/1000,1)}<small>GW</small>`);
+  if(E.report){E.report=false;showReport()}}
+function showReport(){const E=S.ems,K=E.kpi,M=E.mission,T0=Math.max(1,K.T),pc=v=>(v/T0*100).toFixed(0)+' %',P=E.parts||{sec:1,n1:1,sup:1,bal:1,eco:1};
+  const row=(a,b)=>`<tr><td>${a}</td><td>${b}</td></tr>`;
+  const goals=M?[...M.goals.map(g=>`<li class="${g.done?'ok':''}"><i>${g.done?'✓':'○'}</i><span>${g.t}</span></li>`),...M.keeps.map(k=>`<li class="${k.fail?'ko':'ok'}"><i>${k.fail?'✗':'✓'}</i><span>${k.t}</span></li>`),...M.finals.map(f=>`<li class="${f.test()?'ok':'ko'}"><i>${f.test()?'✓':'✗'}</i><span>${f.t}</span></li>`)].join(''):'';
+  $('#repBody').innerHTML=`<h2>Informe de turno</h2>
+   <div class="rep-top"><div><div class="lbl">Misión</div><div class="rep-n">${M?M.name:'—'}</div>${E.done?`<div class="rep-s">${STARS(E.stars)}</div>`:'<div class="meta">En curso</div>'}</div>
+   <div class="rep-g"><div class="lbl">Índice de operación</div><div class="rep-i">${E.idx.toFixed(0)}<small> / 100 · nota ${E.grade}</small></div></div></div>
+   ${goals?`<ul class="goals">${goals}</ul>`:''}
+   <table class="ztab rep-t"><tbody>
+   ${row('Tiempo de reloj operado',fmtDur(K.T))}${row('Normal · Alerta · Emergencia · Apagón',`${pc(K.tN)} · ${pc(K.tA)} · ${pc(K.tE)} · ${pc(K.tB)}`)}
+   ${row('Energía no suministrada',K.ens.toFixed(0)+' MWh')}${row('Costo de generación',(K.cost/1e6).toFixed(2)+' M€')}${row('Emisiones de CO₂',(K.co2/1000).toFixed(1)+' kt')}
+   ${row('Recorte renovable',(K.curt/1000).toFixed(2)+' GWh')}${row('Disparos de circuitos',String(K.trips))}${row('ACE medio',(K.aceI/T0).toFixed(0)+' MW')}${row('Tiempo con frecuencia en 49.8–50.2 Hz',pc(K.fIn))}
+   </tbody></table>
+   <div class="meta">El índice pondera seguridad (35 %: tiempo sin emergencia), N-1 (20 %: tiempo en estado normal), suministro (25 %), balance (10 %) y aprovechamiento renovable (10 %). Ahora: ${[P.sec,P.n1,P.sup,P.bal,P.eco].map(v=>Math.round(v*100)).join(' · ')}.</div>
+   <div class="row"><button class="btn primary" id="repGo">Seguir operando</button><button class="btn" id="repAgain">Repetir misión</button><button class="btn" id="repMenu">Elegir misión</button></div>`;
+  $('#report').hidden=false;UI.wasPaused=UI.paused;UI.paused=true;
+  $('#repGo').onclick=()=>{$('#report').hidden=true;UI.paused=UI.wasPaused};
+  $('#repAgain').onclick=()=>{$('#report').hidden=true;resetAll(M?M.id:'normal');fitView()};
+  $('#repMenu').onclick=()=>{$('#report').hidden=true;$('#start').hidden=false}}
+/* ---- panel de seguridad ---- */
+function secHTML(){const E=S.ems;return `
+  <div class="sec"><h3>Estado del sistema</h3><div class="st-big" id="se-st"></div><ul class="allist act" id="se-why"></ul>
+   <div class="meta">Normal: dentro de límites y seguro ante cualquier falla simple (N-1). Alerta: dentro de límites, pero una contingencia provocaría violaciones o falta reserva. Emergencia: ya hay límites violados. Clasificación de la red europea (ENTSO-E).</div></div>
+  <div class="sec"><h3>Reservas (15 min)</h3><div class="kv"><div><span class="lbl">A subir</span><span class="mono" id="se-up">—</span></div><div><span class="lbl">A bajar</span><span class="mono" id="se-dn">—</span></div>
+   <div><span class="lbl">Mayor incidente</span><span class="mono" id="se-ref">—</span></div><div><span class="lbl">Cobertura</span><span class="mono" id="se-cov">—</span></div></div></div>
+  <div class="sec"><h3>Análisis de contingencias N-1 <span id="se-n"></span></h3><div class="linklist" id="se-list"></div>
+   <div class="meta">Cada medio segundo se simula la pérdida de cada circuito, transformador, bloque generador y enlace HVDC con sensibilidades lineales (LODF/PTDF). Toca una fila para abrir el circuito que se sobrecargaría: su ventana propone el redispatch que más lo alivia.</div></div>
+  <div class="sec"><h3>Automatismos y realismo</h3>
+   ${toggleHTML('se-start','Tiempos de arranque de las centrales (lignito 2 h, gas 8 min, bombeo 90 s)',E.startT)}
+   ${toggleHTML('se-mkt','Programas de intercambio que cambian cada hora (mercado)',E.market)}
+   ${toggleHTML('se-oltc','Cambiadores de tomas automáticos en 380/110 y 380/220 kV',E.oltc)}
+   ${toggleHTML('se-snd','Alarma sonora en eventos graves',!!UI.sound)}</div>`}
+function bindSec(){const E=S.ems;bindT('se-start',on=>{E.startT=on});bindT('se-mkt',on=>{E.market=on;log('info',`Programas horarios de mercado ${on?'activados':'desactivados'}`)});bindT('se-oltc',on=>{E.oltc=on;log('info',`Cambiadores de tomas automáticos ${on?'activados':'desactivados'}`)});bindT('se-snd',on=>{UI.sound=on;if(on)beep()})}
+function updSec(){const E=S.ems,C={normal:'var(--ok)',alerta:'var(--warn)',emergencia:'var(--bad)',apagon:'var(--bad)',restab:'var(--kv380)'}[E.state];
+  const s=$('#se-st');s.textContent=STATE_LBL[E.state];s.style.color=C;
+  H('se-why',E.why.length?E.why.map(w=>`<li><i style="background:${C}"></i><span>${w}</span></li>`).join(''):'<li class="empty">Sin observaciones.</li>');
+  T('se-up',fmtMW(E.resUp));T('se-dn',fmtMW(E.resDn));T('se-ref',fmtMW(E.refInc));T('se-cov',E.refInc>0?(E.resUp/E.refInc).toFixed(1)+' ×':'—');$('#se-cov').className='mono '+(E.resUp<E.refInc?'st-warn':'st-ok');
+  T('se-n',E.sens?`· ${E.n1Count} ${E.n1Count===1?'violación':'violaciones'}`:'');
+  const h=!E.sens?'<span class="empty">Sin red energizada que analizar.</span>':E.n1.length?E.n1.map(c=>`<button data-br="${c.worst}"><span>Si se pierde <b>${c.name}</b></span><span class="mono" style="color:${c.load>120?'var(--bad)':'var(--warn)'}">${c.worst} → ${c.load.toFixed(0)} %</span></button>`).join(''):'<span class="empty">Red N-1 segura: ninguna falla simple provoca sobrecargas.</span>';
+  const l=$('#se-list');if(l.innerHTML!==h){l.innerHTML=h;l.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{const r=b.getBoundingClientRect();openPop('br',b.dataset.br,r.left-420,r.top)}))}}
+/* ---- WAMS ---- */
+function wamsHTML(){const E=S.ems;return `
+  <div class="sec"><h3>Fasores de tensión (PMU)</h3>
+   <div class="frm"><label for="w-ref">Referencia 0°</label><select id="w-ref">${BUSES.filter(b=>b.zone!=='EXT').map(b=>`<option value="${b.key}" ${b.key===E.ref?'selected':''}>${b.name}</option>`).join('')}</select></div>
+   <canvas id="cP" style="height:330px"></canvas>
+   <div class="meta">Cada trazo es el fasor de una subestación: el largo es la tensión y el giro, su ángulo respecto a la referencia. La potencia fluye de los ángulos adelantados a los atrasados. Si la red se parte, los fasores de la otra isla giran: es el deslizamiento de frecuencia.</div></div>
+  <div class="sec"><h3>Diferencias angulares entre áreas</h3><div class="mix" id="w-ang"></div><canvas id="cAh" style="height:140px"></canvas>
+   <div class="meta">Una apertura angular grande indica un corredor muy cargado y poca reserva de estabilidad. Alarma a 35° y grave a 50°.</div></div>
+  <div class="sec"><h3>Islas eléctricas</h3><table class="ztab"><thead><tr><th>Isla</th><th>Barras DE</th><th>Frecuencia</th><th>Inercia</th></tr></thead><tbody id="w-isl"></tbody></table></div>`}
+function bindWams(){$('#w-ref').addEventListener('change',e=>{S.ems.ref=e.target.value;emsMeasure()})}
+const ZC={AMP:'--z-AMP',TTG:'--z-TTG',HZ:'--z-HZ',TBW:'--z-TBW'};
+function updWams(){const E=S.ems;const [x,W,Hh]=setupCanvas($('#cP'));
+  if(x){x.clearRect(0,0,W,Hh);const cx=W/2,cy=Hh/2,R=Math.min(W,Hh)/2-26;x.font='11px '+cv('--f-mono');x.textAlign='center';x.textBaseline='middle';
+    for(const [v,l] of [[0.9,'0.9'],[1.0,'1.0'],[1.1,'1.1 pu']]){x.beginPath();x.arc(cx,cy,R*v/1.1,0,7);x.strokeStyle=cv('--rule');x.lineWidth=v===1?1.5:1;x.stroke()}
+    for(let a=0;a<360;a+=30){const r=a*Math.PI/180;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+R*Math.cos(r),cy-R*Math.sin(r));x.strokeStyle=cv('--rule');x.lineWidth=0.6;x.stroke();x.fillStyle=cv('--dim');const s=a>180?a-360:a;x.fillText(s+'°',cx+(R+15)*Math.cos(r),cy-(R+15)*Math.sin(r))}
+    let mx=null,mn=null;
+    for(const b of BUSES){if(b.zone==='EXT'||b.isl<0)continue;const th=pmuRel(b),r=th*Math.PI/180,L=R*b.v/1.1,X=cx+L*Math.cos(r),Y=cy-L*Math.sin(r),col=cv(ZC[b.zone]);
+      x.beginPath();x.moveTo(cx,cy);x.lineTo(X,Y);x.strokeStyle=col;x.globalAlpha=b.isl===S.main?0.75:0.45;x.lineWidth=1.4;if(b.isl!==S.main)x.setLineDash([4,3]);x.stroke();x.setLineDash([]);x.globalAlpha=1;
+      x.beginPath();x.arc(X,Y,3,0,7);x.fillStyle=col;x.fill();if(b.isl===S.main){if(!mx||th>mx.th)mx={th,b,X,Y};if(!mn||th<mn.th)mn={th,b,X,Y}}}
+    x.fillStyle=cv('--ink');x.font='600 12px '+cv('--f-disp');for(const e of [mx,mn])if(e){x.textAlign=e.X>cx?'right':'left';x.fillText(`${e.b.key} ${e.th.toFixed(0)}°`,e.X+(e.X>cx?-7:7),e.Y-9)}
+    if(!mx){x.fillStyle=cv('--dim');x.textAlign='center';x.fillText('Sin barras energizadas',cx,cy)}}
+  H('w-ang',PMU_PAIRS.map((p,k)=>{const a=E.ang[k];if(a==null)return `<div><span>${p[2]}</span><span class="b"></span><span class="mono">—</span></div>`;const v=Math.abs(a),sy=E.angSync[k];
+    return `<div><span>${p[2]}<br><span class="meta">${p[0]}–${p[1]}</span></span><span class="b"><i style="width:${Math.min(100,v/60*100)}%;background:${!sy?'var(--dc)':v>50?'var(--bad)':v>35?'var(--warn)':'var(--ok)'}"></i></span><span class="mono">${sy?a.toFixed(1)+'°':'desliza'}</span></div>`}).join(''));
+  const [y,W2,H2]=setupCanvas($('#cAh'));
+  if(y){y.clearRect(0,0,W2,H2);const L=34,Rr=8,Tt=6,B=16,w=W2-L-Rr,h=H2-Tt-B,cols=['--kv380','--kv220','--kv110','--warn','--dc'];let m=30;for(const r of E.ah)for(let k=1;k<r.length;k++)if(r[k]!=null)m=Math.max(m,Math.abs(r[k])*1.1);m=Math.min(m,180);
+    const Y=v=>Tt+h/2-v/m*h/2,X=t=>L+(t-(S.t-300))/300*w;y.font='11px '+cv('--f-mono');y.textAlign='right';y.textBaseline='middle';
+    for(const v of [-m*0.8,0,m*0.8]){y.strokeStyle=cv('--rule');y.beginPath();y.moveTo(L,Y(v));y.lineTo(L+w,Y(v));y.stroke();y.fillStyle=cv('--dim');y.fillText(v.toFixed(0)+'°',L-4,Y(v))}
+    y.save();y.beginPath();y.rect(L,Tt,w,h);y.clip();for(let k=1;k<=PMU_PAIRS.length;k++){y.beginPath();let pen=false;for(const r of E.ah){if(r[k]==null){pen=false;continue}const px=X(r[0]),py=Y(r[k]);pen?y.lineTo(px,py):y.moveTo(px,py);pen=true}y.strokeStyle=cv(cols[k-1]);y.lineWidth=1.6;y.stroke()}y.restore();
+    y.textAlign='left';y.textBaseline='top';PMU_PAIRS.forEach((p,k)=>{y.fillStyle=cv(cols[k]);y.fillText(p[0]+'–'+p[1],L+4+k*((w-8)/5),Tt+h+3)})}
+  H('w-isl',S.islands.map((I,k)=>{const n=I.buses.filter(i=>BUSES[i].zone!=='EXT').length;return `<tr><td>${I.hasExt?'Europa continental':'Isla de '+I.slack.id}${k===S.main?' ●':''}</td><td>${n}</td><td class="${fClass(I.f)}">${I.f.toFixed(3)} Hz</td><td>${(I.Hs/1000).toFixed(0)} GW·s</td></tr>`}).join('')||'<tr><td colspan="4">Sin islas energizadas</td></tr>')}
+/* ---- flotante de misión, atajos y delegación ---- */
+function wireEms(){const m=$('#mis'),h=$('#misH');let d=null;if(innerWidth<760)m.classList.add('min');$('#misMin').textContent=m.classList.contains('min')?'+':'–';
+  $('#misMin').addEventListener('click',e=>{e.stopPropagation();m.classList.toggle('min');$('#misMin').textContent=m.classList.contains('min')?'+':'–'});
+  h.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;d={x:e.clientX,y:e.clientY,l:m.offsetLeft,t:m.offsetTop};h.setPointerCapture(e.pointerId)});
+  h.addEventListener('pointermove',e=>{if(!d)return;const st=$('#stage');m.style.right='auto';m.style.left=clamp(d.l+e.clientX-d.x,0,st.clientWidth-m.offsetWidth)+'px';m.style.top=clamp(d.t+e.clientY-d.y,0,st.clientHeight-40)+'px'});
+  h.addEventListener('pointerup',()=>{d=null});
+  $('#misRep').addEventListener('click',showReport);
+  const menu=()=>{closeDrawer();closePop();UI.paused=true;$('#start').hidden=false};$('#misMenu').addEventListener('click',menu);
+  document.addEventListener('click',e=>{if(e.target.closest('#s-menu'))menu();
+    if(e.target.closest('#alAck')){for(const k in S.active)S.active[k].ack=true;updateUI()}});
+  document.addEventListener('keydown',e=>{if(e.target.closest('input,select,textarea')||e.ctrlKey||e.metaKey||e.altKey||!$('#start').hidden)return;const k=e.key.toLowerCase();
+    if(k===' '){e.preventDefault();UI.paused=!UI.paused;updateUI()}else if(k==='f')$('#btnFs').click();else if(k==='+'||k==='=')$('#zIn').click();else if(k==='-')$('#zOut').click();else if(k==='0')fitView();
+    else if(k==='a'){for(const q in S.active)S.active[q].ack=true;updateUI()}else if(k==='w')$('[data-dr="wams"]').click();else if(k==='s')$('#stPill').click()})}
+
 wire();
 
 </script>
