@@ -797,7 +797,7 @@ function findIslands(){
     else if(ks.length>1){let tw=0,best=ks[0];f=0;for(const kk of ks){f+=old[kk].f*keys[kk];tw+=keys[kk];if(keys[kk]>keys[best])best=kk}f/=tw;phi=old[best].phi;pacc=0}
     else if(I.src.some(g=>g.type==='ext')){f=F0}
     const key=I.slack.id;I.key=key;I.f=f;I.phi=phi;I.pacc=pacc;I.Hs=Hs;I.hasExt=I.src.some(g=>g.type==='ext');
-    I.ufls=old[key]?old[key].ufls||0:0;I.uflsT=0;I.fBad=0;I.rocof=old[key]?old[key].rocof||0:0;
+    I.ufls=old[key]?old[key].ufls||0:0;I.uflsT=old[key]?old[key].uflsT||0:0;I.fBad=old[key]?old[key].fBad||0:0;I.rocof=old[key]?old[key].rocof||0:0;
     next[key]=I;for(const g of I.src)g.islKey=key});
   for(const g of GENS)if(g.sync&&!g.on)g.islKey=null;
   S.islState=next;S.islands=isl;
@@ -826,7 +826,7 @@ function solveNetwork(){
   for(const b of BUSES){b.pl=0;b.ql=0}
   for(const L of LOADS){const b=BUSES[L.bus];if(b.isl<0||!L.lon){L.p=L.q=0;continue}
     const I=S.islands[b.isl],df=I.f-F0;
-    L.prof=loadProf(L,S.tod/3600);L.p=L.pmax*L.scale*L.prof*S.demand*(1-L.shed)*(1+1.5*df/F0);L.q=L.p*L.qr;
+    L.prof=loadProf(L,S.tod/3600);L.p=L.pmax*L.scale*L.prof*S.demand*(1-L.shed)*(1+1.5*df/F0)*(L.pu??1);L.q=L.p*L.qr;
     b.pl+=L.p;b.ql+=L.q;Ps[L.bus]-=L.p/SB;Qs[L.bus]-=L.q/SB;lp+=L.p;lq+=L.q}
   // un programa de intercambio solo se entrega si hay al menos una interconexión energizada con una barra alemana
   for(const nb of NBS){const k=BK[nb.key];nb.linked=BRS.some(r=>r.tie&&r.on&&(r.f===k||r.t===k)&&BUSES[r.f===k?r.t:r.f].isl>=0&&BUSES[r.f===k?r.t:r.f].isl===BUSES[k].isl);if(nb.linked)Ps[k]+=nb.sched/SB}
@@ -1166,6 +1166,7 @@ function clearBus(bus,msg){let n=0;for(const o of BRS)if(o.on&&!o.hidden&&(o.f==
 function emsStep(dt){const E=S.ems,dd=dt*Math.max(1,S.dayRate),dh=dd/3600;
   for(const g of GENS){if(!g.starting)continue;if(g.startLeft>0){g.startLeft-=dd;if(g.startLeft<=0)log('info',`${g.id}: caldera y turbina listas, esperando sincronismo`)}
     if(g.startLeft<=0&&(BUSES[g.bus].isl>=0||g.black))syncUnit(g)}
+  for(const L of LOADS)if(L.lon&&L.pu!==undefined&&L.pu<1&&BUSES[L.bus].isl>=0)L.pu=Math.min(1,L.pu+dd/900);
   const rf=RATE_F[S.season];for(const br of BRS){if(!br.isTr&&!br.hidden)br.rate=br.rate0*rf;if(br.lockT>0){br.lockT-=dd;if(br.lockT<=0)log('info',`${br.id}: reparación terminada, disponible para el cierre`)}}
   if(E.market){const hr=Math.floor(S.clk/3600);if(hr!==E.mkHr){E.mkHr=hr;let net=0;
       for(const n of NBS){if(!n.linked)continue;const d=Math.round((Math.random()-0.5)*800/50)*50,lim=Math.abs(n.nb.sched)+1500;const t0=n.schedT??n.sched;n.schedT=clamp(t0+d,-lim,lim);net+=n.schedT-t0}
@@ -1218,7 +1219,7 @@ const MISSIONS={
      {t:'Suministra el 90 % de la demanda prevista',test:()=>S.ems.served>=0.9*S.ems.expected}],
    keeps:[noBO,{t:'Frecuencia siempre entre 49.0 y 51.0 Hz',test:()=>S.islands.every(I=>I.f>49&&I.f<51)}],finals:[]})},
  blackiso:{mode:'black',dayRate:30,setup(){S.ems.noTies=true;for(const br of BRS)if(br.tie){br.on=false;br.lockT=Infinity}for(const d of DCS)if(d.ext){d.on=false;d.lock=true}},make:()=>({name:'Apagón aislado',par:8*3600,
-   brief:'Alemania está a oscuras y no hay ayuda exterior: todas las interconexiones AC y los enlaces HVDC con otros países están fuera de servicio. Arranca en negro con bombeo, hidro o turbinas de gas, forma islas, sincronízalas y sostén la frecuencia tú solo.',
+   brief:'Alemania está a oscuras y no hay ayuda exterior: todas las interconexiones AC y los enlaces HVDC con otros países están fuera de servicio. Arranca en negro con bombeo, hidro o turbinas de gas, forma islas, sincronízalas y sostén la frecuencia tú solo. Los reguladores de velocidad de las máquinas están activos, como en cualquier arranque en negro real.',
    goals:[{t:'Arranca en negro la primera unidad',test:()=>deLive()>0},{t:'Repón 5 GW de demanda',test:()=>S.loadP>=5000},
      {t:'Lleva tensión a las cuatro zonas de control',test:()=>['AMP','TTG','HZ','TBW'].every(z=>BUSES.some(b=>b.zone===z&&b.isl>=0))},
      {t:'Une todo en una sola isla alemana',test:()=>deIslands()===1&&deLive()>=50},
@@ -1250,6 +1251,7 @@ const MISSIONS={
    keeps:[noBO,{t:'Menos de 1000 MWh no suministrados',test:()=>S.ems.kpi.ens<1000},{t:'Sin disparos por sobrecarga',test:()=>!S.ems.ovTrip}],finals:[]})}};
 let CONG_W=10;
 function missionStart(id){const def=MISSIONS[id]||MISSIONS.normal;init(def.mode);if(def.dayRate)S.dayRate=def.dayRate;if(def.setup)def.setup();
+  if(def.mode!=='normal')S.primOn=true;
   const M=def.make();M.id=MISSIONS[id]?id:'normal';S.ems.mission=M;Object.assign(S.ems.kpi,{T:0,tN:0,tA:0,tE:0,tB:0,tR:0,ens:0,eExp:0,cost:0,co2:0,curt:0,eRen:0,aceI:0,fI:0,fIn:0,trips:0});S.ems.ovTrip=false;
   emsN1();emsMeasure();S.ems.state=emsState();log('info',`Misión: ${M.name}. ${M.brief}`)}
 /* --- perturbaciones con relés --- */
@@ -1280,7 +1282,7 @@ function emsAuto(dt){const E=S.ems;if(!S.islands[S.main]||deLive()===0)return;S.
       if(r&&r.dn&&r.dn.ren&&w.loading>103){const g=G(r.dn.id);g.capC=Math.max(0,Math.min(g.capC??g.pmax,g.p)-300);g.curt=Math.min(g.curt,g.capC)}}}}
 /* --- guardado y recuperación del estado --- */
 const SAVE_G=['on','pref','pset','pm','gov','agcSh','trip','out','outT','vw','vmean','curt','capC','cloud','cloudT','cloudEvt','cloudLvl','clouds','irr','ffr','soc','vset','agc','islKey','starting','startLeft','cutout','ovt','p'];
-const SAVE_B=['on','tap','phi','ovt','lockT'],SAVE_D=['on','pset','p','polesOk','outT','qa','qb','lock'],SAVE_L=['scale','lon','shed','tOn'];
+const SAVE_B=['on','tap','phi','ovt','lockT'],SAVE_D=['on','pset','p','polesOk','outT','qa','qb','lock'],SAVE_L=['scale','lon','shed','tOn','pu'];
 const SAVE_S=['t','clk','tod','dayRate','season','demand','profile','primOn','agcOn','protOn','uflsOn','lfsmOn','syncChk','ffrAll','agc','lastBO','auto'];
 const SAVE_E=['startT','market','mkHr','oltc','restoring','lastBO','reBO','ovTrip','shedEver','mT','ref','done','split','stars','noTies','state'];
 const r7=v=>typeof v==='number'&&isFinite(v)?+v.toPrecision(7):v;
@@ -1527,7 +1529,7 @@ function tap(target,x,y){
 function operate(brk){const [k,id]=brk.split(':');
   if(k==='br'){const br=BR(id);if(br.on){br.on=false;br.ovt=0;log('warn',`Operador: abre ${br.isTr?'el transformador':'el circuito'} ${br.id}`)}else if(closeBranch(br))log('info',`Operador: cierra ${br.isTr?'el transformador':'el circuito'} ${br.id}`)}
   else if(k==='dev')toggleDev(G(id));
-  else if(k==='load'){const L=LOADS.find(x=>x.id===id);L.lon=!L.lon;if(L.lon)L.tOn=S.t;log(L.lon?'info':'warn',`Operador: ${L.lon?'cierra':'abre'} el alimentador ${L.id} (${loadNow(L).toFixed(0)} MW)`)}
+  else if(k==='load'){const L=LOADS.find(x=>x.id===id);L.lon=!L.lon;if(L.lon){L.tOn=S.t;L.pu=0.03}log(L.lon?'info':'warn',`Operador: ${L.lon?'cierra':'abre'} el alimentador ${L.id} (${loadNow(L).toFixed(0)} MW)`)}
   else if(k==='dc'){const d=DC(id);if(d.lock){toast('Este enlace con el exterior está fuera de servicio en esta misión.');return}d.on=!d.on;log(d.on?'info':'warn',`Operador: ${d.on?'desbloquea':'bloquea'} el enlace ${d.name}`)}
   solveNetwork();updateUI()}
 const loadNow=L=>L.pmax*L.scale*loadProf(L,S.tod/3600)*S.demand*(1-L.shed);
@@ -1664,7 +1666,7 @@ function bindLoad(L){bindBrk('pb','load:'+L.id);bindSp('l-sc',0,2,3,v=>{L.scale=
 function updLoad(L){const b=BUSES[L.bus],live=b.isl>=0&&L.lon;$('#pb').classList.toggle('off',!L.lon);T('pb-t',L.lon?'Alimentador cerrado · doble clic para abrir':'Alimentador abierto · doble clic para cerrar');
   T('l-p',live?fmtMW(L.p):'0');T('l-q',live?L.q.toFixed(0)+' MVAr':'0');T('l-i',live?Math.round(iA(L.p,L.q,b.v,b.kv))+' A':'0');
   T('l-pf',Math.round(loadProf(L,S.tod/3600)*100)+' % del pico');T('l-sh',Math.round(L.shed*100)+' %');
-  T('l-m',L.lon?`Si abres el alimentador, la red pierde ${loadNow(L).toFixed(0)} MW de golpe.`:`Al cerrar, la barra toma ${loadNow(L).toFixed(0)} MW de golpe. Baja la escala para tomar un bloque más pequeño.`);syncSp('l-sc',L.scale,3)}
+  T('l-m',L.lon?`${(L.pu??1)<1?`Reconectando: ${Math.round((L.pu??1)*100)} % de la carga tomada. `:''}Si abres el alimentador, la red pierde esa carga de golpe.`:`Al cerrar, la distribución reconecta por etapas: la carga sube hasta ${loadNow(L).toFixed(0)} MW en unos 15 min de reloj. Baja la escala para limitar el bloque.`);syncSp('l-sc',L.scale,3)}
 
 function dcHTML(d){const A=BUSES[d.a],B=d.b!=null?BUSES[d.b]:null,X=d.ext?DCX[d.ext]:null;
   return `<div class="pop-h"><div class="pop-t">HVDC ${d.name}</div><div class="pop-s">${A.name} ↔ ${B?B.name:X.name+' (área '+X.sync+')'} · ±${d.kv} kV · ${d.pmax} MW · bipolo VSC</div></div>
