@@ -8,7 +8,7 @@
 <title>Sala de Control Alemania</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 /* Sala de control SCADA: unifilar ortogonal a pantalla completa con zoom, panel de monitoreo flotante, ventanas por elemento y paneles laterales. Tema oscuro deliberado. */
 html,body{margin:0}
@@ -272,28 +272,153 @@ input[type=range]::-moz-range-thumb{background:#4f86b8;border-radius:4px}
 .mon{width:304px}.mis{width:300px}.kg{gap:5px 6px}.kg>div .v small{margin-left:2px}
 .legend .sw{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:5px;border:1.6px solid var(--ok);background:var(--ok)}
 .legend .sw.o{background:transparent;border-color:var(--a-red)}
+
+/* ============ v3: interfaz de aplicación (riel de iconos, barra de transporte, widgets) ============ */
+:root{--f-disp:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;--f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;--railw:76px;--dockh:94px;--card:#0d1318;--card2:#141c23}
+body{font-size:13.5px}
+.lbl{letter-spacing:.06em;font-size:10.5px;font-weight:700}
+.app{display:grid;grid-template-columns:var(--railw) minmax(0,1fr);grid-template-rows:minmax(0,1fr) var(--dockh);gap:0;padding:0;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.stage{grid-column:2;grid-row:1;border:0;border-radius:0;background:var(--canvas)}
+/* riel */
+.rail{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0 10px;background:#06090b;border-right:1px solid #141b21;overflow:hidden auto;scrollbar-width:none}
+.logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#07110c;background:linear-gradient(140deg,#2fbf86,#1b86a3);margin-bottom:8px;flex:none}
+.logo svg{width:24px;height:24px}
+.rb{position:relative;width:68px;border:0;background:none;padding:5px 0 4px;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--dim);flex:none}
+.ri{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;color:color-mix(in srgb,var(--ac) 88%,var(--ink));background:color-mix(in srgb,var(--ac) 17%,#0a0e12);transition:background .15s,color .15s,transform .15s}
+.ri svg{width:21px;height:21px}
+.rl{font-size:10.5px;font-weight:700;letter-spacing:.01em}
+.rb:hover .ri{background:color-mix(in srgb,var(--ac) 30%,#0a0e12);transform:translateY(-1px)}
+.rb.on .ri{background:linear-gradient(140deg,var(--ac),color-mix(in srgb,var(--ac) 55%,#000));color:#080c0f}
+.rb.on .rl{color:color-mix(in srgb,var(--ac) 75%,var(--ink))}
+.rb.on::before{content:"";position:absolute;left:-4px;top:14px;width:7px;height:24px;border-radius:4px;background:var(--ac)}
+.rsp{flex:1}
+.rb .badge{position:absolute;top:0;right:8px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#1c262e;color:var(--ink);font:600 11px var(--f-mono);display:grid;place-items:center;border:2px solid #06090b}
+.rb.bell.warn .badge{background:var(--warn);color:#0a0e12}.rb.bell.bad .badge{background:var(--bad);color:#0a0e12}
+.rb.bell.bad .ri{background:color-mix(in srgb,var(--bad) 34%,#0a0e12);color:var(--bad)}
+.rb.bell.unack .ri svg{animation:ring 1s infinite}
+/* barra de transporte */
+.dock{grid-column:2;grid-row:2;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:0 16px;background:#06090b;border-top:1px solid #141b21;min-width:0}
+.dk-l{display:flex;align-items:center;gap:14px;min-width:0}
+.dk-np{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.dk-t{font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-s{font-family:var(--f-mono);font-size:12.5px;color:var(--dim);white-space:nowrap;display:flex;gap:5px;align-items:baseline}
+.dk-s b{font-weight:600;font-size:14px}.dk-s i{font-style:normal;margin-right:8px}
+.dk-c{display:flex;flex-direction:column;align-items:center;gap:7px}
+.dk-row{display:flex;align-items:center;gap:12px}
+.play{width:46px;height:46px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:#18222a;color:var(--a-green);transition:transform .12s,background .15s}
+.play:hover{transform:scale(1.06)}
+.play.go{background:linear-gradient(140deg,#30c489,#1f9c66);color:#06100b;box-shadow:0 0 0 6px color-mix(in srgb,var(--a-green) 16%,transparent)}
+.play svg{width:20px;height:20px}
+.dk-time{display:flex;align-items:center;gap:10px}
+.dk-time .mono{font-size:14px;font-weight:600;min-width:74px;text-align:right}
+.day{position:relative;display:block;width:min(300px,28vw);height:6px;border-radius:3px;background:linear-gradient(90deg,#141c33 0%,#141c33 22%,#7a5a1e 30%,#b98f2c 50%,#7a5a1e 72%,#141c33 80%,#141c33 100%);overflow:visible}
+.day i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:color-mix(in srgb,var(--a-green) 55%,transparent);mix-blend-mode:screen;opacity:.0}
+.day b{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--a-green);border:3px solid #06090b;box-shadow:0 0 0 1px var(--a-green)}
+.dk-r{position:static;display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:8px;min-width:0;max-width:none;overflow-x:auto;scrollbar-width:none}
+.seg{border:0;background:#10171d;border-radius:11px;padding:3px;flex-wrap:nowrap;flex:none}
+.seg button{border-radius:8px;padding:5px 9px;font-weight:500}
+.seg button.on{background:color-mix(in srgb,var(--a-blue) 36%,#10171d);color:var(--ink)}
+.seg .lbl{padding:0 5px 0 7px}
+/* botones y estado */
+.btn{text-transform:none;letter-spacing:0;font-weight:700;font-size:13px;border-radius:11px;padding:7px 13px}
+.btn.state{border:0;border-radius:999px;padding:9px 16px 9px 14px;min-width:0;font-size:12.5px;letter-spacing:.07em;font-weight:800;background:color-mix(in srgb,var(--ac) 24%,#0a0e12);color:color-mix(in srgb,var(--ac) 85%,var(--ink));flex:none}
+.btn.state::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--ac);box-shadow:0 0 0 4px color-mix(in srgb,var(--ac) 28%,transparent)}
+.btn.state.s-emergencia::before,.btn.state.s-apagon::before{animation:blink 1s steps(2,start) infinite}
+/* widgets */
+.mon{border:1px solid #18212a;border-radius:18px;background:color-mix(in srgb,var(--card) 90%,transparent);backdrop-filter:blur(10px);box-shadow:0 18px 50px rgba(0,0,0,.6);width:316px}
+.mis{width:306px}
+.mon-h,.mis .mon-h{background:none;border-bottom:0;padding:10px 10px 4px 14px;border-radius:18px 18px 0 0}
+.mon-h .lbl{font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--ink);font-weight:800}
+.mon-h .grip{display:none}
+.mon-h::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--a-blue)}.mis .mon-h::before{background:var(--a-violet)}
+.mon-h button{border:0;background:#18222a;border-radius:8px;width:26px;height:26px}
+.mon.min .mon-h{padding-bottom:10px}
+.mon-b{padding:6px 12px 12px;gap:10px}
+.kg{gap:7px}
+.kg>div{border-radius:12px;padding:7px 10px 8px;background:linear-gradient(150deg,color-mix(in srgb,var(--tc) 26%,var(--card2)),color-mix(in srgb,var(--tc) 7%,var(--card2)))}
+.kg>div .lbl{color:color-mix(in srgb,var(--tc) 78%,var(--ink));text-transform:none;letter-spacing:0;font-size:11px}
+.kg .v{font-size:15px;font-weight:500}.kg .big .v{font-size:24px;font-weight:600}
+.ztab th{text-transform:none;letter-spacing:0;font-family:var(--f-body);font-weight:700}
+.ztab td{border-top-color:#18212a}.ztab td i{border-radius:50%}
+.mis-n{font-size:17px;font-weight:800;letter-spacing:0}
+.goals li{font-size:12.5px;font-weight:500}
+/* ventanas */
+.pop{border:1px solid #1b252e;border-radius:20px;background:var(--card);box-shadow:0 24px 70px rgba(0,0,0,.7);padding:14px 16px 16px;gap:12px;width:400px}
+.pop-h{margin:-14px -16px 0;padding:16px 50px 14px 16px;border-bottom:0;border-radius:20px 20px 0 0;background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 46%,var(--card)),color-mix(in srgb,var(--pc) 12%,var(--card)))}
+.pop-t{font-size:17px;font-weight:800;letter-spacing:0}.pop-s{color:color-mix(in srgb,var(--pc) 30%,var(--ink));opacity:.85}
+.pop .x{top:12px;right:12px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);color:var(--ink);font-size:18px}
+.pop h4{text-transform:none;letter-spacing:0;font-size:13px;font-weight:800}
+.pop .kv,.pop .kv.three{background:var(--card2);border-radius:14px;padding:10px 12px}
+.pop .meta{font-size:12px}
+.brk{width:100%;border:0;border-radius:14px;padding:11px 13px;background:var(--card2);font-family:var(--f-body);font-weight:700;font-size:13px;color:var(--ink);gap:12px;white-space:normal}
+.brk.off{background:var(--card2);color:var(--dim)}
+.brk-sq{position:relative;flex:none;width:46px;height:27px;border:0;border-radius:14px;background:var(--a-green)}
+.brk-sq::after{content:"";position:absolute;top:3px;left:22px;width:21px;height:21px;border-radius:50%;background:#d3dbe0;transition:left .15s}
+.brk.off .brk-sq{background:#3a2326;border:0}.brk.off .brk-sq::after{left:3px;background:#9aa7b0}
+.pill{border:0;border-radius:999px;padding:4px 10px;background:color-mix(in srgb,currentColor 16%,transparent);letter-spacing:.04em;font-size:11px;font-weight:800}
+.sp-row{gap:4px}.sp-row button{border:0;border-radius:9px;padding:7px 0;font-size:11px;font-weight:600}
+.sp-row input{border:0;border-radius:9px;background:#05080a;font-weight:600}
+input[type=range]{height:24px}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:#1a242c}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:#1a242c}
+input[type=range]::-webkit-slider-thumb{width:18px;height:18px;margin-top:-6px;border-radius:50%;border:3px solid #0d1318;background:var(--pc,var(--a-blue));box-shadow:0 0 0 1px var(--pc,var(--a-blue))}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;border:3px solid #0d1318;background:var(--pc,var(--a-blue))}
+.tgl input{width:40px;height:23px;border-radius:12px;background:#1d2830}.tgl input::after{width:17px;height:17px;top:3px;left:3px;background:#8e9ba5}
+.tgl input:checked{background:var(--a-green)}.tgl input:checked::after{transform:translateX(17px);background:#d3dbe0}
+.meter,.lbar{height:8px;border:0;border-radius:4px;background:#1a242c}.meter .mf{border-radius:4px;opacity:1}
+.linklist button{border:0;border-radius:11px;background:var(--card2);padding:9px 11px}
+.linklist button:hover{background:#1a242d}
+.sync{border:0;border-radius:14px;background:var(--card2)}
+/* panel lateral */
+.drawer{bottom:var(--dockh);width:min(480px,100%);background:#080b0e;border-left:1px solid #141b21;border-radius:22px 0 0 0;box-shadow:-24px 0 70px rgba(0,0,0,.65)}
+.dr-h{background:none;border-bottom:0;padding:18px 18px 6px}
+.dr-h h2{text-transform:none;letter-spacing:0;font-size:22px;font-weight:800}
+.dr-b{padding:10px 16px 22px;gap:12px}
+.sec{border:0;border-radius:16px;background:var(--card);padding:14px}
+.sec h3{text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:800;color:var(--ink)}
+.st-big{text-transform:none;letter-spacing:0;font-weight:800}
+select,.frm input[type=time],.frm input[type=number]{border:0;border-radius:9px;background:var(--card2);padding:8px 10px}
+/* inicio e informe */
+.modal{background:rgba(0,0,0,.82);backdrop-filter:blur(6px)}
+.modal-c{border:1px solid #18212a;border-radius:24px;background:#080b0e;padding:26px;width:min(900px,100%)}
+.modal-c h2{text-transform:none;letter-spacing:-.01em;font-size:30px;font-weight:800}
+.opts{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.opts button{border:0;border-radius:18px;padding:0 0 14px;overflow:hidden;background:var(--card);gap:5px;transition:transform .15s,background .15s}
+.opts button:hover{transform:translateY(-3px);background:var(--card2)}
+.opts .art{display:grid;place-items:center;height:84px;margin-bottom:8px;color:color-mix(in srgb,var(--ac) 85%,var(--ink));background:linear-gradient(140deg,color-mix(in srgb,var(--ac) 52%,#000),color-mix(in srgb,var(--ac) 16%,#000))}
+.opts .art svg{width:40px;height:40px}
+.opts b{font-size:16.5px;font-weight:800;letter-spacing:0;padding:0 14px;color:var(--ink)!important}.opts button>span:not(.art){padding:0 14px}
+.rep-n{font-weight:800}.toast{border:0;border-radius:14px;background:#151e26;bottom:calc(var(--dockh) + 16px);font-weight:600}
+.zoom{bottom:12px;right:12px}.zoom button{border:0;border-radius:12px;background:#10171d;width:40px;height:40px}
+.legend{left:14px;bottom:12px;font-weight:500}
+.deadband{border:0;border-radius:16px;background:color-mix(in srgb,var(--bad) 22%,#0a0e12)}
+.deadband b{text-transform:none;letter-spacing:0;font-weight:800}
+.t-zone{font-weight:800;letter-spacing:.14em}.t-name{font-weight:800}.t-tag{font-weight:800}.t-nb{font-weight:800}
+@media (max-width:1780px){.dk-r .lbl{display:none}}
+@media (max-width:1180px){.dk-np{display:none}}
+@media (max-width:760px){
+  :root{--dockh:104px}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+  .dock{grid-column:1;grid-row:1;grid-template-columns:auto 1fr;gap:6px 10px;padding:8px 10px;border-top:0;border-bottom:1px solid #141b21}
+  .dk-l{min-width:max-content}.dk-c{flex-direction:row;gap:8px;justify-content:flex-end;min-width:0}#speedSeg button:first-child{display:none}.dk-time .day,.dk-time .lbl,#speedSeg2{display:none}.dk-time .mono{min-width:0}
+  .dk-r{grid-column:1/3;justify-content:flex-start}
+  .stage{grid-column:1;grid-row:2}
+  .rail{grid-column:1;grid-row:3;flex-direction:row;justify-content:space-between;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid #141b21;overflow:auto hidden;gap:0}
+  .logo,.rsp{display:none}.rb{width:auto;flex:1;min-width:46px}.ri{width:36px;height:36px;border-radius:11px}.rl{font-size:9.5px}.rb.on::before{display:none}
+  .drawer{bottom:0;border-radius:0;z-index:60}.mon,.mis{width:270px}.mis{top:54px;left:10px;right:auto}
+  .toast{bottom:90px}
+}
 </style>
 </head>
 <body>
 
 <div class="app" id="app">
-  <header class="top">
-    <div class="brand">
-      <div class="brand-name">Sala de control · <span>Alemania</span></div>
-      <div class="brand-sub">Red de transmisión simplificada · 380/220/110 kV · HVDC · 4 zonas de control · flujo AC en tiempo real</div>
-    </div>
-    <button class="btn state s-normal" id="stPill" data-dr="sec" title="Estado del sistema (ENTSO-E)">NORMAL</button>
-    <div class="clock"><span class="lbl" id="clockLbl">Hora</span><span class="mono" id="clock">08:00:00</span></div>
-    <button class="btn" id="btnPause">Pausa</button>
-    <div class="seg" id="speedSeg"><span class="lbl">Vel.</span><button data-s="0.1">×0.1</button><button data-s="0.25" class="on">×0.25</button><button data-s="0.5">×0.5</button><button data-s="1">×1</button><button data-s="2">×2</button></div>
-    <button class="btn" data-dr="dist"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 1L3 9h4l-1 6 6-8H8z"/></svg><span class="bt">Perturbaciones</span></button>
-    <button class="btn" data-dr="wams"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/><path d="M8 8L12.5 4M8 8L3.5 6.5M8 8L10 13"/></svg><span class="bt">Fasores</span></button>
-    <button class="btn" data-dr="trend"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12l4-5 3 3 5-7"/><path d="M1 15h14"/></svg><span class="bt">Tendencias</span></button>
-    <button class="btn" data-dr="sys"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.6" fill="var(--panel-2)"/><circle cx="11" cy="8" r="1.6" fill="var(--panel-2)"/><circle cx="7" cy="12" r="1.6" fill="var(--panel-2)"/></svg><span class="bt">Sistema</span></button>
-    <button class="btn bell" data-dr="alarm" id="bell" aria-label="Alarmas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0"/></svg><span class="bt">Alarmas</span><span class="badge" id="bellN">0</span></button>
-    <button class="btn" id="btnFs" aria-label="Pantalla completa"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" id="fsIco"><path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4"/></svg><span class="bt" id="fsTxt">Pantalla completa</span></button>
-  </header>
-
+  <nav class="rail" aria-label="Secciones">
+    <div class="logo" title="Sala de control · Alemania"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11.2 2L4.5 11.2h4.6L8 18l7-9.4h-4.7z" fill="currentColor"/></svg></div>
+    <button class="rb" data-dr="sec"  style="--ac:var(--a-green)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6 2.3v4.6c0 3.8-2.5 6.6-6 8.1-3.5-1.5-6-4.3-6-8.1V4.8z"/><path d="M7.3 10l2 2 3.6-4"/></svg></span><span class="rl">Seguridad</span></button><button class="rb" data-dr="wams"  style="--ac:var(--a-violet)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.3"/><path d="M10 10l5-4.6M10 10L4.6 8.2M10 10l2.2 5.6"/></svg></span><span class="rl">Fasores</span></button><button class="rb" data-dr="dist"  style="--ac:var(--a-amber)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11.2 2L4.5 11.2h4.6L8 18l7-9.4h-4.7z"/></svg></span><span class="rl">Eventos</span></button><button class="rb" data-dr="trend"  style="--ac:var(--a-cyan)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 14.5l4.6-5.6 3.4 3.2 6.5-8"/><path d="M2.5 17.5h15"/></svg></span><span class="rl">Tendencias</span></button><button class="rb bell" data-dr="alarm" id="bell" aria-label="Alarmas" style="--ac:var(--a-pink)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13.5V9a5 5 0 0 1 10 0v4.5l1.7 1.8H3.3z"/><path d="M8.2 17.3a1.9 1.9 0 0 0 3.6 0"/></svg></span><span class="rl">Alarmas</span><span class="badge" id="bellN">0</span></button><button class="rb" data-dr="sys"  style="--ac:var(--a-blue)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5h14M3 10h14M3 14.5h14"/><circle cx="7" cy="5.5" r="1.9" fill="currentColor"/><circle cx="13" cy="10" r="1.9" fill="currentColor"/><circle cx="8.5" cy="14.5" r="1.9" fill="currentColor"/></svg></span><span class="rl">Sistema</span></button>
+    <span class="rsp"></span>
+    <button class="rb js-menu" style="--ac:var(--a-red)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17.5V3M5 3.8h9.5l-2 3.4 2 3.4H5"/></svg></span><span class="rl">Misiones</span></button><button class="rb"  id="btnFs" aria-label="Pantalla completa" style="--ac:var(--a-green)"><span class="ri"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg></span><span class="rl">Pantalla</span></button>
+  </nav>
   <main class="stage" id="stage">
     <svg id="sld" viewBox="0 0 2060 1650" role="img" aria-label="Unifilar de la red de transmisión alemana simplificada"></svg>
     <div class="mon" id="mon">
@@ -324,15 +449,27 @@ input[type=range]::-moz-range-thumb{background:#4f86b8;border-radius:4px}
           <div><span class="lbl">Reserva ↑ / ↓</span><span class="v" id="misR">—</span></div><div><span class="lbl">Residual 30/60′</span><span class="v" id="misF">—</span></div></div>
         <div class="row"><button class="btn" id="misRep">Informe</button><button class="btn" id="misMenu">Misiones</button></div></div>
     </div>
-    <div class="tools">
-      <div class="seg" id="segBus"><span class="lbl">Barras</span><button data-m="v" class="on">pu</button><button data-m="kv">kV</button><button data-m="th">θ</button><button data-m="off">—</button></div>
-      <div class="seg" id="segLine"><span class="lbl">Ramas</span><button data-m="p" class="on">MW</button><button data-m="l">%</button><button data-m="i">A</button><button data-m="q">MVAr</button></div>
-      <div class="seg" id="segLay"><button data-l="zones" class="on">Zonas</button><button data-l="vals" class="on">Valores</button></div>
-    </div>
     <div class="zoom"><button class="btn" id="zIn" aria-label="Acercar">+</button><button class="btn" id="zOut" aria-label="Alejar">−</button><button class="btn" id="zFit" aria-label="Ajustar a la pantalla"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="10" height="10"/></svg></button></div>
     <div class="legend"><span><i style="background:var(--kv380)"></i>380 kV</span><span><i style="background:var(--kv220)"></i>220 kV</span><span><i style="background:var(--kv110)"></i>110 kV</span><span><i class="dc"></i>HVDC</span><span><i style="background:var(--warn)"></i>&gt;90 %</span><span><i style="background:var(--bad)"></i>Sobrecarga</span><span><i class="sw"></i>Interruptor cerrado</span><span><i class="sw o"></i>abierto · doble clic para operar</span></div>
     <div class="deadband" id="deadband" hidden><b>Alemania sin tensión</b><span id="dbMsg"></span><button class="btn" id="dbGuide">Guía</button></div>
   </main>
+  <footer class="dock">
+    <div class="dk-l">
+      <button class="btn state s-normal" id="stPill" data-dr="sec" title="Estado del sistema (ENTSO-E)">NORMAL</button>
+      <div class="dk-np"><span class="dk-t" id="dkM">Sala de control · Alemania</span><span class="dk-s"><b id="dkF">—</b><i>Hz</i><b id="dkA">—</b><i>MW ACE</i></span></div>
+    </div>
+    <div class="dk-c">
+      <div class="dk-row"><div class="seg" id="speedSeg"><button data-s="0.1">×0.1</button><button data-s="0.25" class="on">×0.25</button><button data-s="0.5">×0.5</button></div>
+        <button class="play" id="btnPause" aria-label="Pausa o reanudar"></button>
+        <div class="seg" id="speedSeg2"><button data-s="1">×1</button><button data-s="2">×2</button></div></div>
+      <div class="dk-time"><span class="mono" id="clock">08:00:00</span><span class="day"><i id="dayFill"></i><b id="dayKnob"></b></span><span class="lbl" id="clockLbl">día ×10</span></div>
+    </div>
+    <div class="dk-r tools"><div class="seg" id="segBus"><span class="lbl">Barras</span><button data-m="v" class="on">pu</button><button data-m="kv">kV</button><button data-m="th">θ</button><button data-m="off">—</button></div>
+      <div class="seg" id="segLine"><span class="lbl">Ramas</span><button data-m="p" class="on">MW</button><button data-m="l">%</button><button data-m="i">A</button><button data-m="q">MVAr</button></div>
+      <div class="seg" id="segLay"><button data-l="zones" class="on">Zonas</button><button data-l="vals" class="on">Valores</button></div>
+    </div>
+    <span id="fsTxt" hidden></span><span id="playLbl" hidden></span>
+  </footer>
 </div>
 
 <div class="pop" id="pop" hidden role="dialog"></div>
@@ -342,12 +479,12 @@ input[type=range]::-moz-range-thumb{background:#4f86b8;border-radius:4px}
     <h2>Sala de control · Alemania</h2>
     <p>Red de transmisión alemana simplificada: 56 subestaciones en 380, 220 y 110 kV, cuatro zonas de control (Amprion, TenneT, 50Hertz, TransnetBW), dobles ternas, enlaces HVDC, interconexiones con siete países y el resto de Europa como equivalente. Tú despachas, maniobras y respondes a las perturbaciones.</p>
     <div class="opts">
-      <button data-mode="black"><b>Restablecimiento nacional</b><span>Alemania a oscuras. Reenergiza desde Europa o arranca en negro, toma carga por bloques y resincroniza las islas.</span></button>
-      <button data-mode="congest"><b>Congestión norte–sur</b><span>Frente de viento en el norte y corredores saturados. Resuélvelo con redispatch, HVDC y desfasadores antes de que actúen las protecciones.</span></button>
-      <button data-mode="cascade"><b>Cascada norte–sur</b><span>Una tormenta saca cuatro circuitos de 380 kV. Evita que la sobrecarga se propague y recupera la red.</span></button>
-      <button data-mode="shift"><b>Turno con incidencias</b><span>De 08:00 a 12:00 con rayos, disparos de bloques, polos HVDC bloqueados y cambios de programa.</span></button>
-      <button data-mode="island"><b>Alemania aislada</b><span>Sin interconexiones AC: poca inercia y la frecuencia depende solo de ti durante dos horas.</span></button>
-      <button data-mode="normal"><b>Operación libre</b><span>Red interconectada, sin objetivos. Para explorar y practicar a tu ritmo.</span></button>
+      <button data-mode="black"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v7M5.3 6a6.5 6.5 0 1 0 9.4 0"/></svg></span><b>Restablecimiento nacional</b><span>Alemania a oscuras. Reenergiza desde Europa o arranca en negro, toma carga por bloques y resincroniza las islas.</span></button>
+      <button data-mode="congest"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h10a2.5 2.5 0 1 0-2.4-3.2M3 10h13a2.5 2.5 0 1 1-2.4 3.2M3 14h7"/></svg></span><b>Congestión norte–sur</b><span>Frente de viento en el norte y corredores saturados. Resuélvelo con redispatch, HVDC y desfasadores antes de que actúen las protecciones.</span></button>
+      <button data-mode="cascade"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11.2 2L4.5 11.2h4.6L8 18l7-9.4h-4.7z"/></svg></span><b>Cascada norte–sur</b><span>Una tormenta saca cuatro circuitos de 380 kV. Evita que la sobrecarga se propague y recupera la red.</span></button>
+      <button data-mode="shift"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.3"/><path d="M10 5.5V10l3 2"/></svg></span><b>Turno con incidencias</b><span>De 08:00 a 12:00 con rayos, disparos de bloques, polos HVDC bloqueados y cambios de programa.</span></button>
+      <button data-mode="island"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3.2"/><circle cx="10" cy="10" r="7.3" stroke-dasharray="3 3"/></svg></span><b>Alemania aislada</b><span>Sin interconexiones AC: poca inercia y la frecuencia depende solo de ti durante dos horas.</span></button>
+      <button data-mode="normal"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l4.5-6 3 3.5L17 4"/><circle cx="17" cy="4" r="1.3" fill="currentColor"/></svg></span><b>Operación libre</b><span>Red interconectada, sin objetivos. Para explorar y practicar a tu ritmo.</span></button>
     </div>
     <p class="meta">Toca una línea, barra o equipo para abrir su ventana. Los interruptores (■) son solo interruptores: doble clic para abrir o cerrar. Atajos: espacio pausa · F pantalla completa · S seguridad · W fasores · A reconoce alarmas · + − 0 zoom.</p>
   </div>
@@ -1664,8 +1801,8 @@ function updMon(){const M=S.islands[S.main];const deLive=BUSES.some(b=>b.zone!==
   const nI=S.islands.filter(I=>I.buses.some(i=>BUSES[i].zone!=='EXT')).length;T('monIsl',nI>1?`Alemania dividida en ${nI} islas eléctricas.`:(M&&!M.hasExt?'Alemania opera aislada de Europa.':''))}
 function lCol(br,base){if(!br.live)return 'var(--faint)';if(br.loading>100)return 'var(--bad)';if(br.loading>90)return 'var(--warn)';return base}
 function updateUI(){
-  T('clock',hhmm(S.tod));T('clockLbl',S.dayRate===1?'Hora · tiempo real':`Hora · día ×${S.dayRate}`);
-  {const b=$('#btnPause');b.textContent=UI.paused?(S.t<0.05?'▶ Empezar':'▶ Reanudar'):'Pausa';b.classList.toggle('go',UI.paused)}
+  T('clock',hhmm(S.tod));T('clockLbl',S.dayRate===1?'tiempo real':`día ×${S.dayRate}`);$('#dayKnob').style.left=(S.tod/864).toFixed(2)+'%';
+  {const b=$('#btnPause'),h=UI.paused?'<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 3.5v13l11-6.5z"/></svg>':'<svg viewBox="0 0 20 20" fill="currentColor"><rect x="4.5" y="3.5" width="4" height="13" rx="1"/><rect x="11.5" y="3.5" width="4" height="13" rx="1"/></svg>';if(b.dataset.s!==String(UI.paused)){b.dataset.s=String(UI.paused);b.innerHTML=h}b.classList.toggle('go',UI.paused);b.title=UI.paused?'Empezar (espacio)':'Pausa (espacio)'}
   const act=Object.values(S.active),nb=act.filter(a=>a.level==='bad').length;const bell=$('#bell');bell.classList.toggle('bad',nb>0);bell.classList.toggle('warn',nb===0&&act.length>0);T('bellN',String(act.length));
   const deDead=!BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);$('#deadband').hidden=!deDead;if(deDead)T('dbMsg',(S.lastBO?S.lastBO[0].toUpperCase()+S.lastBO.slice(1)+' ':'')+'Cierra una interconexión o arranca en negro bombeo, hidro o turbinas de gas.');
   updMon();
@@ -1723,7 +1860,7 @@ function wireMon(){const m=$('#mon'),h=$('#monH');let d=null;
 
 function wire(){
   $('#btnPause').addEventListener('click',()=>{UI.paused=!UI.paused;updateUI()});
-  document.querySelectorAll('#speedSeg button').forEach(b=>b.addEventListener('click',()=>{UI.speed=+b.dataset.s;document.querySelectorAll('#speedSeg button').forEach(x=>x.classList.toggle('on',x===b))}));
+  document.querySelectorAll('#speedSeg button,#speedSeg2 button').forEach(b=>b.addEventListener('click',()=>{UI.speed=+b.dataset.s;document.querySelectorAll('#speedSeg button,#speedSeg2 button').forEach(x=>x.classList.toggle('on',x===b))}));
   document.querySelectorAll('#segBus button').forEach(b=>b.addEventListener('click',()=>{UI.busMode=b.dataset.m;document.querySelectorAll('#segBus button').forEach(x=>x.classList.toggle('on',x===b));updateUI()}));
   document.querySelectorAll('#segLine button').forEach(b=>b.addEventListener('click',()=>{UI.lineMode=b.dataset.m;document.querySelectorAll('#segLine button').forEach(x=>x.classList.toggle('on',x===b));updateUI()}));
   document.querySelectorAll('#segLay button').forEach(b=>b.addEventListener('click',()=>{b.classList.toggle('on');$('#sld').classList.toggle(b.dataset.l==='zones'?'nozones':'novals',!b.classList.contains('on'))}));
@@ -1759,10 +1896,11 @@ const seenBad=new Set();
 /* ---- estado, misión e informe ---- */
 const STARS=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 function updEms(){const E=S.ems;if(!E)return;
-  const p=$('#stPill'),lbl=STATE_LBL[E.state].toUpperCase();if(p.textContent!==lbl)p.textContent=lbl;p.className='btn state s-'+E.state+(UI.drawer==='sec'?' on':'');
+  const p=$('#stPill'),lbl=STATE_LBL[E.state].toUpperCase();if(p.textContent!==lbl)p.textContent=lbl;p.className='btn state s-'+E.state;
   let unBad=false;for(const k in S.active){const a=S.active[k];if(!a.ack&&a.level==='bad'){unBad=true;if(!seenBad.has(k)){seenBad.add(k);if(UI.sound)beep()}}}
   for(const k of seenBad)if(!S.active[k])seenBad.delete(k);
   $('#bell').classList.toggle('unack',unBad);
+  {const I=S.islands[S.main],live=deLive()>0;T('dkM',E.mission?E.mission.name:'Sala de control · Alemania');T('dkF',I&&live?I.f.toFixed(3):'—');$('#dkF').className=I&&live?fClass(I.f):'st-bad';T('dkA',live?sgn(S.ace):'—');$('#dkA').className=Math.abs(S.ace)>1000?'st-bad':Math.abs(S.ace)>300?'st-warn':'st-ok'}
   const M=E.mission;$('#mis').hidden=!M;if(!M)return;
   T('misT',M.goals.length?fmtDur(E.mT)+(M.par?' / '+fmtDur(M.par):''):'');
   T('misN',M.name+(E.done?' · '+STARS(E.stars):''));
@@ -1852,7 +1990,7 @@ function wireEms(){const m=$('#mis'),h=$('#misH');let d=null;if(innerWidth<760)m
   h.addEventListener('pointerup',()=>{d=null});
   $('#misRep').addEventListener('click',showReport);
   const menu=()=>{closeDrawer();closePop();UI.paused=true;$('#start').hidden=false};$('#misMenu').addEventListener('click',menu);
-  document.addEventListener('click',e=>{if(e.target.closest('#s-menu'))menu();
+  document.addEventListener('click',e=>{if(e.target.closest('#s-menu,.js-menu'))menu();
     if(e.target.closest('#alAck')){for(const k in S.active)S.active[k].ack=true;updateUI()}});
   document.addEventListener('keydown',e=>{if(e.target.closest('input,select,textarea')||e.ctrlKey||e.metaKey||e.altKey||!$('#start').hidden)return;const k=e.key.toLowerCase();
     if(k===' '){e.preventDefault();UI.paused=!UI.paused;updateUI()}else if(k==='f')$('#btnFs').click();else if(k==='+'||k==='=')$('#zIn').click();else if(k==='-')$('#zOut').click();else if(k==='0')fitView();
