@@ -266,7 +266,7 @@ input[type=range]::-moz-range-thumb{background:#4f86b8;border-radius:4px}
 .linklist button{border-radius:8px}.linklist button:hover{border-color:var(--a-blue)}
 .modal-c{border-radius:14px}.opts button{--ac:var(--a-blue);border-radius:12px;background:color-mix(in srgb,var(--ac) 12%,var(--panel));border-color:color-mix(in srgb,var(--ac) 36%,var(--panel))}
 .opts button:hover{border-color:var(--ac)}.opts button b{color:color-mix(in srgb,var(--ac) 65%,var(--ink))}
-.opts button:nth-child(1){--ac:var(--a-red)}.opts button:nth-child(2){--ac:var(--a-amber)}.opts button:nth-child(3){--ac:var(--a-pink)}.opts button:nth-child(4){--ac:var(--a-violet)}.opts button:nth-child(5){--ac:var(--a-cyan)}.opts button:nth-child(6){--ac:var(--a-green)}
+.opts button:nth-child(1){--ac:var(--a-red)}.opts button:nth-child(2){--ac:#ff8a4c}.opts button:nth-child(3){--ac:var(--a-amber)}.opts button:nth-child(4){--ac:var(--a-pink)}.opts button:nth-child(5){--ac:var(--a-violet)}.opts button:nth-child(6){--ac:var(--a-cyan)}.opts button:nth-child(7){--ac:var(--a-green)}
 .toast{border-radius:10px;border-color:color-mix(in srgb,var(--a-blue) 45%,var(--rule))}
 .deadband{border-radius:10px}
 .mon{width:304px}.mis{width:300px}.kg{gap:5px 6px}.kg>div .v small{margin-left:2px}
@@ -480,6 +480,7 @@ select,.frm input[type=time],.frm input[type=number]{border:0;border-radius:9px;
     <p>Red de transmisión alemana simplificada: 56 subestaciones en 380, 220 y 110 kV, cuatro zonas de control (Amprion, TenneT, 50Hertz, TransnetBW), dobles ternas, enlaces HVDC, interconexiones con siete países y el resto de Europa como equivalente. Tú despachas, maniobras y respondes a las perturbaciones.</p>
     <div class="opts">
       <button data-mode="black"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v7M5.3 6a6.5 6.5 0 1 0 9.4 0"/></svg></span><b>Restablecimiento nacional</b><span>Alemania a oscuras. Reenergiza desde Europa o arranca en negro, toma carga por bloques y resincroniza las islas.</span></button>
+      <button data-mode="blackiso"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6v4M7.4 7.6a3.8 3.8 0 1 0 5.2 0"/><circle cx="10" cy="10" r="7.6" stroke-dasharray="3 3"/></svg></span><b>Apagón aislado</b><span>Desde cero y sin Europa: todas las interconexiones están fuera de servicio. Arranca en negro, une las islas y sostén la frecuencia tú solo.</span></button>
       <button data-mode="congest"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h10a2.5 2.5 0 1 0-2.4-3.2M3 10h13a2.5 2.5 0 1 1-2.4 3.2M3 14h7"/></svg></span><b>Congestión norte–sur</b><span>Frente de viento en el norte y corredores saturados. Resuélvelo con redispatch, HVDC y desfasadores antes de que actúen las protecciones.</span></button>
       <button data-mode="cascade"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11.2 2L4.5 11.2h4.6L8 18l7-9.4h-4.7z"/></svg></span><b>Cascada norte–sur</b><span>Una tormenta saca cuatro circuitos de 380 kV. Evita que la sobrecarga se propague y recupera la red.</span></button>
       <button data-mode="shift"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.3"/><path d="M10 5.5V10l3 2"/></svg></span><b>Turno con incidencias</b><span>De 08:00 a 12:00 con rayos, disparos de bloques, polos HVDC bloqueados y cambios de programa.</span></button>
@@ -1068,7 +1069,7 @@ const isRen=g=>g.type==='wind'||g.type==='off'||g.type==='solar';
 function init(mode){init0(mode);emsInit(mode)}
 function step(dt){step0(dt);emsStep(dt)}
 function tripLine(br,reason){if(S.ems&&br.on){S.ems.kpi.trips++;if(/sobrecarga/.test(reason))S.ems.ovTrip=true}tripLine0(br,reason)}
-function closeBranch(br){if(br.lockT>0){log('warn',`${br.id} está en descargo por falla permanente; disponible en ${Math.ceil(br.lockT/60)} min de reloj`);return false}return closeBranch0(br)}
+function closeBranch(br){if(br.lockT===Infinity){log('warn',`${br.id}: la interconexión está fuera de servicio en esta misión. Alemania opera aislada.`);return false}if(br.lockT>0){log('warn',`${br.id} está en descargo por falla permanente; disponible en ${Math.ceil(br.lockT/60)} min de reloj`);return false}return closeBranch0(br)}
 function emsInit(mode){for(const br of BRS){br.rate0=br.rate;br.lockT=0}
   S.ems={mode,startT:true,market:mode==='normal',mkHr:Math.floor(S.clk/3600),oltc:false,oltcT:0,n1:[],n1Count:0,n1T:0,sens:null,
     state:mode==='black'?'apagon':'normal',cand:null,candT:0,restoring:mode==='black',lastBO:S.lastBO,reBO:false,ovTrip:false,shedEver:false,
@@ -1207,6 +1208,15 @@ const MISSIONS={
      {t:'Una sola isla, sincronizada con Europa',test:()=>deIslands()===1&&!!S.islands[S.main]&&S.islands[S.main].hasExt&&deLive()>=40},
      {t:'Suministra el 90 % de la demanda prevista',test:()=>S.ems.served>=0.9*S.ems.expected}],
    keeps:[noBO,{t:'Frecuencia siempre entre 49.0 y 51.0 Hz',test:()=>S.islands.every(I=>I.f>49&&I.f<51)}],finals:[]})},
+ blackiso:{mode:'black',dayRate:30,setup(){S.ems.noTies=true;for(const br of BRS)if(br.tie){br.on=false;br.lockT=Infinity}for(const d of DCS)if(d.ext){d.on=false;d.lock=true}},make:()=>({name:'Apagón aislado',par:8*3600,
+   brief:'Alemania está a oscuras y no hay ayuda exterior: todas las interconexiones AC y los enlaces HVDC con otros países están fuera de servicio. Arranca en negro con bombeo, hidro o turbinas de gas, forma islas, sincronízalas y sostén la frecuencia tú solo.',
+   goals:[{t:'Arranca en negro la primera unidad',test:()=>deLive()>0},{t:'Repón 5 GW de demanda',test:()=>S.loadP>=5000},
+     {t:'Lleva tensión a las cuatro zonas de control',test:()=>['AMP','TTG','HZ','TBW'].every(z=>BUSES.some(b=>b.zone===z&&b.isl>=0))},
+     {t:'Une todo en una sola isla alemana',test:()=>deIslands()===1&&deLive()>=50},
+     {t:'Repón 25 GW de demanda',test:()=>S.loadP>=25000},
+     {t:'Suministra el 90 % de la demanda prevista',test:()=>S.ems.served>=0.9*S.ems.expected}],
+   keeps:[noBO,{t:'Sin deslastre por subfrecuencia',test:()=>!S.ems.shedEver}],
+   finals:[{t:'Frecuencia en 49.8–50.2 Hz al menos el 80 % del tiempo',test:()=>S.ems.kpi.fIn/Math.max(1,S.ems.kpi.T)>=0.8}]})},
  normal:{mode:'normal',make:()=>({name:'Operación libre',brief:'Red interconectada con Europa, sin objetivos. Opera a tu ritmo: el índice de operación mide cómo lo haces.',goals:[],keeps:[],finals:[]})},
  island:{mode:'island',dayRate:10,setup(){S.dist.level=1;S.primOn=true},make:()=>({name:'Alemania aislada',par:0,
    brief:'Todas las interconexiones AC están abiertas. Sin la inercia de Europa, cada desbalance mueve la frecuencia: mantén la isla estable durante dos horas de reloj con perturbaciones leves. La regulación primaria está activada; el resto es tuyo.',
@@ -1472,7 +1482,7 @@ function operate(brk){const [k,id]=brk.split(':');
   if(k==='br'){const br=BR(id);if(br.on){br.on=false;br.ovt=0;log('warn',`Operador: abre ${br.isTr?'el transformador':'el circuito'} ${br.id}`)}else if(closeBranch(br))log('info',`Operador: cierra ${br.isTr?'el transformador':'el circuito'} ${br.id}`)}
   else if(k==='dev')toggleDev(G(id));
   else if(k==='load'){const L=LOADS.find(x=>x.id===id);L.lon=!L.lon;if(L.lon)L.tOn=S.t;log(L.lon?'info':'warn',`Operador: ${L.lon?'cierra':'abre'} el alimentador ${L.id} (${loadNow(L).toFixed(0)} MW)`)}
-  else if(k==='dc'){const d=DC(id);d.on=!d.on;log(d.on?'info':'warn',`Operador: ${d.on?'desbloquea':'bloquea'} el enlace ${d.name}`)}
+  else if(k==='dc'){const d=DC(id);if(d.lock){toast('Este enlace con el exterior está fuera de servicio en esta misión.');return}d.on=!d.on;log(d.on?'info':'warn',`Operador: ${d.on?'desbloquea':'bloquea'} el enlace ${d.name}`)}
   solveNetwork();updateUI()}
 const loadNow=L=>L.pmax*L.scale*loadProf(L,S.tod/3600)*S.demand*(1-L.shed);
 function toggleDev0(g){
@@ -1575,7 +1585,7 @@ function updBr(br){$('#pb').classList.toggle('off',!br.on);T('pb-t',br.on?'Inter
   T('e-ls',br.live?(br.pf+br.pt).toFixed(1)+' MW':'—');T('e-dth',br.live?(BUSES[br.f].th-BUSES[br.t].th).toFixed(2)+'°':'—');
   const sc=syncCheck(br),sy=$('#e-sync');sy.hidden=!sc||br.on;
   if(sc&&!br.on){$('#e-syn').setAttribute('transform',`rotate(${sc.dth})`);T('e-syt',`Δf ${sgn(sc.df*1000)} mHz · ΔV ${sgn(sc.dv*100,1)} % · Δθ ${sgn(sc.dth)}°`);T('e-sym',sc.ok?'Condiciones de sincronismo cumplidas: puedes cerrar.':'Fuera de sincronismo: ajusta la frecuencia y la tensión de la isla.')}
-  T('e-pr',br.lockT>0?`En descargo por falla permanente: disponible en ${fmtDur(br.lockT)} de reloj.`:!br.on?'Interruptor abierto.':!br.live?'Cerrado pero sin tensión.':!S.protOn?'Protección de sobrecarga bloqueada.':br.loading>100?`Sobrecarga: la protección dispara en ~${Math.max(0,(20-br.ovt)/((br.loading/100)**2-1)).toFixed(0)} s si no la alivias.`:'Protección de sobrecarga en vigilancia.');
+  T('e-pr',br.lockT===Infinity?'Interconexión fuera de servicio en esta misión: Alemania opera aislada.':br.lockT>0?`En descargo por falla permanente: disponible en ${fmtDur(br.lockT)} de reloj.`:!br.on?'Interruptor abierto.':!br.live?'Cerrado pero sin tensión.':!S.protOn?'Protección de sobrecarga bloqueada.':br.loading>100?`Sobrecarga: la protección dispara en ~${Math.max(0,(20-br.ovt)/((br.loading/100)**2-1)).toFixed(0)} s si no la alivias.`:'Protección de sobrecarga en vigilancia.');
   H('e-rem',remText(br));syncSp('e-tap',br.tap,4);syncSp('e-phi',br.phi,1);
   for(const r of BRS)if(r.cor===br.cor&&r!==br)T('e-sib-'+r.id.replace('/','_'),r.on?(r.live?r.loading.toFixed(0)+' %':'sin tensión'):'abierta')}
 
@@ -1804,7 +1814,7 @@ function updateUI(){
   T('clock',hhmm(S.tod));T('clockLbl',S.dayRate===1?'tiempo real':`día ×${S.dayRate}`);$('#dayKnob').style.left=(S.tod/864).toFixed(2)+'%';
   {const b=$('#btnPause'),h=UI.paused?'<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 3.5v13l11-6.5z"/></svg>':'<svg viewBox="0 0 20 20" fill="currentColor"><rect x="4.5" y="3.5" width="4" height="13" rx="1"/><rect x="11.5" y="3.5" width="4" height="13" rx="1"/></svg>';if(b.dataset.s!==String(UI.paused)){b.dataset.s=String(UI.paused);b.innerHTML=h}b.classList.toggle('go',UI.paused);b.title=UI.paused?'Empezar (espacio)':'Pausa (espacio)'}
   const act=Object.values(S.active),nb=act.filter(a=>a.level==='bad').length;const bell=$('#bell');bell.classList.toggle('bad',nb>0);bell.classList.toggle('warn',nb===0&&act.length>0);T('bellN',String(act.length));
-  const deDead=!BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);$('#deadband').hidden=!deDead;if(deDead)T('dbMsg',(S.lastBO?S.lastBO[0].toUpperCase()+S.lastBO.slice(1)+' ':'')+'Cierra una interconexión o arranca en negro bombeo, hidro o turbinas de gas.');
+  const deDead=!BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);$('#deadband').hidden=!deDead;if(deDead)T('dbMsg',(S.lastBO?S.lastBO[0].toUpperCase()+S.lastBO.slice(1)+' ':'')+(S.ems&&S.ems.noTies?'Sin ayuda exterior: arranca en negro bombeo, hidro o turbinas de gas.':'Cierra una interconexión o arranca en negro bombeo, hidro o turbinas de gas.'));
   updMon();
   for(const r of BRS){const R=REF.circ[r.id];if(!R)continue;const c=lCol(r,R.col);R.base.setAttribute('stroke',c);R.base.classList.toggle('open',!r.on);
     R.bq.setAttribute('stroke',r.on?(r.live?'var(--ok)':'var(--faint)'):'var(--a-red)');R.bq.setAttribute('fill',r.on?(r.live?'var(--ok)':'var(--faint)'):'var(--canvas)')}
