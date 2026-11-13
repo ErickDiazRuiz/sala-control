@@ -383,6 +383,27 @@ select,.frm input[type=time],.frm input[type=number]{border:0;border-radius:9px;
 .btn.auto.on{background:linear-gradient(140deg,color-mix(in srgb,var(--a-cyan) 70%,#000),color-mix(in srgb,var(--a-cyan) 35%,#000));color:var(--ink);box-shadow:0 0 0 4px color-mix(in srgb,var(--a-cyan) 18%,transparent)}
 .dk-sv{font-size:11px;color:var(--faint);white-space:nowrap}
 #start.loading .opts{opacity:.35;pointer-events:none}
+#minis{position:fixed;inset:0;z-index:35;pointer-events:none}
+.mini{position:absolute;pointer-events:auto;width:236px;background:var(--card);border:1px solid color-mix(in srgb,var(--pc) 40%,#1b252e);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.65);overflow:hidden}
+.mini.ping{animation:ping .5s}@keyframes ping{0%{box-shadow:0 0 0 0 var(--pc)}100%{box-shadow:0 0 0 14px transparent}}
+.mini-h{display:flex;align-items:center;gap:4px;padding:8px 8px 7px 12px;cursor:move;touch-action:none;user-select:none;background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 42%,var(--card)),color-mix(in srgb,var(--pc) 12%,var(--card)))}
+.mini-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.mini-t b{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-t span{font-size:10.5px;color:color-mix(in srgb,var(--pc) 30%,var(--ink));opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-h button{flex:none;width:26px;height:26px;border:0;border-radius:50%;background:rgba(0,0,0,.32);color:var(--ink);cursor:pointer;font-size:15px;line-height:1}
+.mini-b{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px 6px}
+.mini-v{display:flex;flex-direction:column;min-width:0}
+.mv{font-family:var(--f-mono);font-size:24px;font-weight:600;line-height:1.05;color:color-mix(in srgb,var(--pc) 55%,var(--ink))}
+.mu{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brk.msw{width:auto;padding:6px;background:none;flex:none}
+.mini-sp{display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr 1fr;gap:3px;padding:2px 10px 0}
+.mini-sp button{border:0;border-radius:8px;padding:8px 0;font:600 11px var(--f-mono);cursor:pointer;min-width:0;background:color-mix(in srgb,var(--a-green) 13%,var(--card2));color:color-mix(in srgb,var(--a-green) 60%,var(--ink))}
+.mini-sp button[data-d^="-"]{background:color-mix(in srgb,var(--a-red) 13%,var(--card2));color:color-mix(in srgb,var(--a-red) 60%,var(--ink))}
+.mini-sp input{min-width:0;width:100%;border:0;border-radius:8px;background:#05080a;color:var(--ink);font:600 13px var(--f-mono);text-align:center;padding:6px 2px}
+.mini-l{font-size:10.5px;color:var(--faint);padding:4px 12px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-b:last-child{padding-bottom:11px}
+#miniClose{position:fixed;z-index:36;top:10px;left:50%;transform:translateX(-50%);--ac:var(--a-pink);border-radius:999px}
+@media (max-width:760px){#minis{inset:auto 0 calc(74px + env(safe-area-inset-bottom,0px)) 0;display:flex;gap:8px;overflow-x:auto;padding:0 8px;pointer-events:auto;scrollbar-width:none}.mini{position:static;flex:none}.mini-h{cursor:default}#miniClose{top:auto;bottom:calc(250px + env(safe-area-inset-bottom,0px))}}
 /* inicio e informe */
 .modal{background:rgba(0,0,0,.82);backdrop-filter:blur(6px)}
 .modal-c{border:1px solid #18212a;border-radius:24px;background:#080b0e;padding:26px;width:min(900px,100%)}
@@ -479,6 +500,7 @@ select,.frm input[type=time],.frm input[type=number]{border:0;border-radius:9px;
   </footer>
 </div>
 
+<div id="minis"></div><button class="btn" id="miniClose" hidden></button>
 <div class="pop" id="pop" hidden role="dialog"></div>
 <aside class="drawer" id="drawer" hidden><div class="dr-h"><h2 id="drTitle"></h2><button class="btn" id="drClose">Cerrar</button></div><div class="dr-b" id="drBody"></div></aside>
 <div class="modal" id="start">
@@ -495,7 +517,7 @@ select,.frm input[type=time],.frm input[type=number]{border:0;border-radius:9px;
       <button data-mode="island"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3.2"/><circle cx="10" cy="10" r="7.3" stroke-dasharray="3 3"/></svg></span><b>Alemania aislada</b><span>Sin interconexiones AC: poca inercia y la frecuencia depende solo de ti durante dos horas.</span></button>
       <button data-mode="normal"><span class="art"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l4.5-6 3 3.5L17 4"/><circle cx="17" cy="4" r="1.3" fill="currentColor"/></svg></span><b>Operación libre</b><span>Red interconectada, sin objetivos. Para explorar y practicar a tu ritmo.</span></button>
     </div>
-    <p class="meta">Toca una línea, barra o equipo para abrir su ventana. Los interruptores (■) son solo interruptores: doble clic para abrir o cerrar. Atajos: espacio pausa · F pantalla completa · S seguridad · W fasores · A reconoce alarmas · + − 0 zoom.</p>
+    <p class="meta">Toca una línea, barra o equipo para abrir su panel compacto; puedes tener varios abiertos y moverlos. El botón ⋯ abre el detalle. Los interruptores (■) operan con doble clic. Atajos: espacio pausa · F pantalla completa · S seguridad · W fasores · A reconoce alarmas · + − 0 zoom.</p>
   </div>
 </div>
 <div class="modal" id="report" hidden><div class="modal-c" id="repBody"></div></div>
@@ -1523,8 +1545,8 @@ function tap(target,x,y){
     if(UI.lastTap&&UI.lastTap.brk===brk&&now-UI.lastTap.t<450){UI.lastTap=null;operate(brk);return}
     // un solo clic en un interruptor: espera por si llega el segundo antes de abrir la ventana
     UI.lastTap={brk,t:now};return}
-  if(k==='dcx'){const d=DCS.find(z=>z.ext===id);if(d){openPop('dc',d.id,x,y);return}}
-  openPop(k,id,x,y)}
+  if(k==='dcx'){const d=DCS.find(z=>z.ext===id);if(d){openMini('dc',d.id,x,y);return}}
+  openMini(k,id,x,y)}
 
 /* ================= maniobras ================= */
 function operate(brk){const [k,id]=brk.split(':');
@@ -1888,7 +1910,7 @@ function updateUI(){
   for(const L of LOADS){const R=REF.dev[L.id];if(!R)continue;const live=L.lon&&BUSES[L.bus].isl>=0;R.gl.style.opacity=live?1:.38;R.bq.setAttribute('fill',live?'var(--ok)':L.lon?'var(--faint)':'var(--canvas)');R.bq.setAttribute('stroke',L.lon?(live?'var(--ok)':'var(--faint)'):'var(--a-red)');
     const t=live?L.p.toFixed(0):'';if(R.pv.textContent!==t)R.pv.textContent=t;setAlarm(R.al,L.shed>0?'warn':null)}
   updatePop();
-  if(UI.drawer==='trend')updTrend();else if(UI.drawer==='alarm')updAlarm();else if(UI.drawer==='sys')updSys();else if(UI.drawer==='dist')updDist();else if(UI.drawer==='sec')updSec();else if(UI.drawer==='wams')updWams();updEms();updPersist()}
+  if(UI.drawer==='trend')updTrend();else if(UI.drawer==='alarm')updAlarm();else if(UI.drawer==='sys')updSys();else if(UI.drawer==='dist')updDist();else if(UI.drawer==='sec')updSec();else if(UI.drawer==='wams')updWams();updEms();updPersist();updMinis()}
 function animate(dt){if(reduceMotion)return;
   for(const r of BRS){const R=REF.circ[r.id];if(!R)continue;if(!r.live||Math.abs(r.pf)<5){R.fl.style.visibility='hidden';continue}R.fl.style.visibility='visible';const sp=12+60*Math.min(r.loading/100,1.6);R.off+=(r.pf>0?-1:1)*sp*dt;R.off%=1000;R.fl.setAttribute('stroke-dashoffset',R.off.toFixed(1))}
   for(const d of DCS){const R=REF.dc[d.id];if(!d.live||Math.abs(d.p)<5){R.fl.style.visibility='hidden';continue}R.fl.style.visibility='visible';R.off+=(d.p>0?-1:1)*40*dt;R.off%=1000;R.fl.setAttribute('stroke-dashoffset',R.off.toFixed(1))}
@@ -1900,7 +1922,7 @@ const DT=0.1;let last=performance.now(),acc=0,uiAcc=0;
 function loop(now){const dtr=Math.min(0.1,(now-last)/1000);last=now;requestAnimationFrame(loop);
   try{if(UI.started&&!UI.paused){acc+=dtr*UI.speed;let k=0;const t0=performance.now();while(acc>=DT&&k<8){step(DT);acc-=DT;k++;if(performance.now()-t0>40){acc=0;break}}}
     animate(UI.paused?0:dtr*Math.min(UI.speed*2,2));uiAcc+=dtr;Store.tick(dtr);if(uiAcc>0.15){uiAcc=0;updateUI()}}catch(e){console.error(e)}}
-function resetAll(mode){closePop();missionStart(mode);UI.paused=true;seenBad.clear();buildSLD();updateUI();if(UI.drawer)openDrawer(UI.drawer)}
+function resetAll(mode){closePop();closeMinis();missionStart(mode);UI.paused=true;seenBad.clear();buildSLD();updateUI();if(UI.drawer)openDrawer(UI.drawer)}
 
 /* ================= monitor flotante y pantalla completa ================= */
 function wireMon(){const m=$('#mon'),h=$('#monH');let d=null;
@@ -1928,7 +1950,7 @@ function wire(){
   $('#dbGuide').addEventListener('click',()=>{openDrawer('sys');const g=document.getElementById('guide');if(g)g.scrollIntoView({block:'start'})});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(UI.pop)closePop();else if(UI.drawer)closeDrawer()}});
   $('#start').querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{$('#start').hidden=true;resetAll(b.dataset.mode);fitView();UI.started=true;Store.save();toast('Misión en pausa: estudia la situación y pulsa Empezar (barra espaciadora).')}));
-  wireView();wireMon();wireEms();wirePersist();
+  wireView();wireMon();wireEms();wirePersist();$('#miniClose').addEventListener('click',closeMinis);
   init('black');buildSLD();fitView();updateUI();requestAnimationFrame(loop)}
 /* ======================= UI del EMS ======================= */
 const fmtDur=s=>s>=3600?`${Math.floor(s/3600)} h ${String(Math.round(s%3600/60)).padStart(2,'0')} min`:s>=90?`${Math.round(s/60)} min`:`${Math.max(0,Math.round(s))} s`;
@@ -2072,7 +2094,7 @@ const Store={doc:null,dev:Math.random().toString(36).slice(2,8),lastTs:0,lastT:-
     this.at=hhmmReal()},
   tick(dtr){this.acc=(this.acc||0)+dtr;if(this.acc>=15){this.acc=0;if(S.t!==this.lastT)this.save()}}};
 function hhmmReal(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
-function loadState(d){closePop();if(!restore(d))return false;buildSLD();seenBad.clear();UI.paused=true;UI.started=true;$('#start').hidden=true;updateUI();fitView();if(UI.drawer)openDrawer(UI.drawer);return true}
+function loadState(d){closePop();closeMinis();if(!restore(d))return false;buildSLD();seenBad.clear();UI.paused=true;UI.started=true;$('#start').hidden=true;updateUI();fitView();if(UI.drawer)openDrawer(UI.drawer);return true}
 function setAuto(on){S.auto=on;if(on){UI.prevAuto={p:S.primOn,a:S.agcOn};log('info','Piloto automático activado: regulación primaria, AGC, seguimiento de la demanda, almacenamiento, recorte y HVDC ante sobrecargas')}
   else{if(UI.prevAuto){S.primOn=UI.prevAuto.p;S.agcOn=UI.prevAuto.a}log('info','Piloto automático desactivado: el control vuelve a ser tuyo')}updateUI()}
 function updPersist(){const b=$('#btnAuto');b.classList.toggle('on',!!S.auto);T('saveLbl',Store.where?Store.where+(Store.at?' · '+Store.at:''):'');$('#startBack').hidden=!UI.started}
@@ -2085,6 +2107,55 @@ function wirePersist(){
   const done=best=>{st.classList.remove('loading');T('startMsg',Store.cloud?'Tu partida se guarda sola en la nube: la misma en todos tus dispositivos. Elegir una misión reemplaza la partida guardada.':'Tu partida se guarda sola en este dispositivo. Elegir una misión reemplaza la partida guardada.');
     if(best&&!UI.started){try{if(loadState(best.state))toast('Partida recuperada, en pausa. Pulsa Empezar para seguir.')}catch(e){console.error(e)}}};
   Promise.race([Store.init(),new Promise(r=>setTimeout(()=>r(null),12000))]).then(done,()=>done(null))}
+
+/* ---- paneles compactos: varios abiertos a la vez ---- */
+const MINI=new Map();let miniZ=36;
+function miniSpec(k,id){const short=n=>n.replace(/ \(.*\)/,'');
+  if(k==='dev'){const g=G(id),t=g.type;
+    const sp=g.sync&&t!=='syncon'&&t!=='ext'?{lbl:'Consigna',unit:'MW',get:()=>g.pref,set:v=>{g.pref=v},lo:g.plo,hi:g.phi}
+      :isRen(g)?{lbl:'Límite',unit:'MW',get:()=>g.curt,set:v=>{g.curt=v},lo:0,hi:g.pmax}
+      :(t==='bess'||t==='ev'||t==='dr')?{lbl:'Consigna',unit:'MW',get:()=>g.pref,set:v=>{g.pref=v},lo:g.plo,hi:g.phi}
+      :isLoadType(t)?{lbl:'Consumo',unit:'MW',get:()=>-g.pref,set:v=>{g.pref=-v},lo:0,hi:g.pmax}
+      :(t==='syncon'||t==='statcom')?{lbl:'Tensión',unit:'pu',get:()=>g.vset,set:v=>{g.vset=v},lo:0.95,hi:1.1,dec:3,steps:[0.001,0.01]}:null;
+    return {title:g.id,sub:TYPES[t].lbl+' · '+short(BUSES[g.bus].name),col:DCOL[t],brk:'dev:'+id,on:()=>g.on,sp,
+      big:()=>{const live=g.on&&BUSES[g.bus].isl>=0;if(g.starting)return [g.startLeft>0?fmtDur(g.startLeft):'lista','arrancando'];if(!live)return ['—',g.on?'sin tensión':'fuera de servicio'];
+        return (t==='cap'||t==='reac'||t==='syncon'||t==='statcom')?[g.q.toFixed(0),'MVAr']:[(isLoadType(t)?-g.p:g.p).toFixed(0),'MW'+(g.emax?' · carga '+(g.soc*100).toFixed(0)+' %':'')]}}}
+  if(k==='load'){const L=LOADS.find(x=>x.id===id);return {title:'Carga '+short(BUSES[L.bus].name),sub:'pico '+L.pmax.toLocaleString('es')+' MW',col:DCOL.load,brk:'load:'+id,on:()=>L.lon,
+    sp:{lbl:'Escala',unit:'×',get:()=>L.scale,set:v=>{L.scale=v},lo:0,hi:2,dec:2,steps:[0.01,0.1]},
+    big:()=>L.lon&&BUSES[L.bus].isl>=0?[L.p.toFixed(0),'MW'+((L.pu??1)<1?' · reconectando '+Math.round(L.pu*100)+' %':'')+(L.shed?' · deslastre '+Math.round(L.shed*100)+' %':'')]:['—',L.lon?'sin tensión':'abierta · tomaría '+loadNow(L).toFixed(0)+' MW']}}
+  if(k==='br'){const br=BR(id);return {title:br.id,sub:(br.isTr?'Transformador ':br.isPst?'Desfasador ':br.tie?'Interconexión ':'Circuito ')+br.kv+' kV',col:br.isTr?'var(--tr)':KVC[BUSES[br.f].kv],brk:'br:'+id,on:()=>br.on,
+    sp:br.isPst?{lbl:'Ángulo',unit:'°',get:()=>br.phi,set:v=>{br.phi=v},lo:-30,hi:30,dec:1,steps:[1,5]}:br.isTr?{lbl:'Toma',unit:'',get:()=>br.tap,set:v=>{br.tap=v},lo:0.9,hi:1.1,dec:4,steps:[0.0125,0.05]}:null,
+    big:()=>br.live?[br.loading.toFixed(0)+' %',Math.abs(br.pf).toFixed(0)+' MW · '+Math.round(Math.max(br.ia,br.ib))+' A']:['—',br.lockT>0?'en descargo':br.on?'sin tensión':'abierto']}}
+  if(k==='dc'){const d=DC(id);return {title:d.name,sub:'HVDC ±'+d.kv+' kV',col:'var(--dc)',brk:'dc:'+id,on:()=>d.on,sp:{lbl:'Consigna',unit:'MW',get:()=>d.pset,set:v=>{d.pset=v},lo:-d.pmax,hi:d.pmax},
+    big:()=>d.live?[sgn(d.p),'MW'+(d.polesOk<2?' · un polo':'')]:['—',d.on?'sin tensión':'bloqueado']}}
+  if(k==='bus'){const b=BUSES[BK[id]];return {title:short(b.name),sub:'Barra '+b.kv+' kV',col:KVC[b.kv],big:()=>b.isl>=0?[b.v.toFixed(3),'pu · '+(b.v*b.kv).toFixed(1)+' kV · θ '+pmuRel(b).toFixed(1)+'°']:['—','sin tensión']}}
+  if(k==='nb'){const n=NBS.find(x=>x.key===id);return {title:n.name,sub:'Intercambio AC',col:'var(--dim)',sp:{lbl:'Programa',unit:'MW',get:()=>n.sched,set:v=>{n.sched=v;n.schedT=v},lo:-6000,hi:6000},big:()=>[sgn(nbFlow(n)),'MW físicos']}}
+  return null}
+function openMini(k,id,x,y){const key=k+':'+id;let m=MINI.get(key);
+  if(m){m.el.style.zIndex=++miniZ;m.el.classList.remove('ping');void m.el.offsetWidth;m.el.classList.add('ping');return}
+  const sp=miniSpec(k,id);if(!sp)return;const el=document.createElement('div');el.className='mini';el.style.setProperty('--pc',sp.col);el.style.zIndex=++miniZ;
+  const S2=sp.sp,dec=S2?(S2.dec||0):0,st=S2?(S2.steps||(()=>{const s=Math.max(1,Math.pow(10,Math.floor(Math.log10(Math.max(S2.hi-S2.lo,10)/200))));return [s,s*10]})()):null;
+  el.innerHTML=`<div class="mini-h"><div class="mini-t"><b>${sp.title}</b><span>${sp.sub}</span></div><button data-a="more" title="Ver detalle">⋯</button><button data-a="x" title="Cerrar">×</button></div>
+   <div class="mini-b"><div class="mini-v"><span class="mv">—</span><small class="mu"></small></div>${sp.brk?'<button class="brk msw" title="Doble clic para operar"><span class="brk-sq"></span></button>':''}</div>
+   ${S2?`<div class="mini-sp"><button data-d="${-st[1]}">−${st[1]}</button><button data-d="${-st[0]}">−${st[0]}</button><input type="number" step="${st[0]}" inputmode="decimal" aria-label="${S2.lbl}"><button data-d="${st[0]}">+${st[0]}</button><button data-d="${st[1]}">+${st[1]}</button></div><div class="mini-l">${S2.lbl} · ${(+S2.lo).toFixed(dec)} … ${(+S2.hi).toFixed(dec)} ${S2.unit}</div>`:''}`;
+  $('#minis').appendChild(el);const n=MINI.size;
+  let slot=-1;if(innerWidth>=760){const used=new Set([...MINI.values()].map(q=>q.slot));slot=0;while(used.has(slot))slot++;const per=Math.max(1,Math.floor((innerWidth-96)/246)),col=slot%per,row=Math.floor(slot/per);
+    el.style.left=(92+col*246)+'px';el.style.top=Math.max(8,innerHeight-110-166*(row+1))+'px'}
+  m={k,id,sp,el,dec,slot,mv:el.querySelector('.mv'),mu:el.querySelector('.mu'),sw:el.querySelector('.msw'),inp:el.querySelector('input')};MINI.set(key,m);
+  el.querySelector('[data-a="x"]').addEventListener('click',()=>{el.remove();MINI.delete(key);updMinis()});
+  el.querySelector('[data-a="more"]').addEventListener('click',()=>{const r=el.getBoundingClientRect();openPop(k,id,r.right,r.top+40)});
+  if(m.sw){m.sw.style.touchAction='manipulation';m.sw.addEventListener('click',()=>{const now=Date.now();if(m.t&&now-m.t<450){m.t=0;operate(sp.brk)}else m.t=now})}
+  if(S2){const apply=v=>{v=clamp(+v,S2.lo,S2.hi);if(!isFinite(v))return;S2.set(v);m.inp.value=v.toFixed(dec);logSet(`${sp.title}: ${S2.lbl.toLowerCase()} → ${v.toFixed(dec)} ${S2.unit}`)};
+    el.querySelectorAll('[data-d]').forEach(b=>b.addEventListener('click',()=>apply(S2.get()+ +b.dataset.d)));
+    m.inp.addEventListener('change',()=>apply(m.inp.value));m.inp.addEventListener('keydown',e=>{if(e.key==='Enter'){apply(m.inp.value);m.inp.blur()}})}
+  const hd=el.querySelector('.mini-h');let d=null;hd.addEventListener('pointerdown',e=>{el.style.zIndex=++miniZ;if(e.target.closest('button')||innerWidth<760)return;d={x:e.clientX,y:e.clientY,l:el.offsetLeft,t:el.offsetTop};hd.setPointerCapture(e.pointerId)});
+  hd.addEventListener('pointermove',e=>{if(!d)return;m.slot=-1;el.style.left=clamp(d.l+e.clientX-d.x,0,innerWidth-80)+'px';el.style.top=clamp(d.t+e.clientY-d.y,0,innerHeight-60)+'px'});hd.addEventListener('pointerup',()=>{d=null});
+  updMinis()}
+function closeMinis(){for(const m of MINI.values())m.el.remove();MINI.clear();updMinis()}
+function updMinis(){const c=$('#miniClose');c.hidden=MINI.size<2;if(MINI.size>=2)T('miniClose',`Cerrar los ${MINI.size} paneles`);
+  for(const m of MINI.values()){const [v,u]=m.sp.big();if(m.mv.textContent!==v)m.mv.textContent=v;if(m.mu.textContent!==u)m.mu.textContent=u;
+    if(m.sw)m.sw.classList.toggle('off',!m.sp.on());
+    if(m.inp&&document.activeElement!==m.inp){const s=(+m.sp.sp.get()).toFixed(m.dec);if(m.inp.value!==s)m.inp.value=s}}}
 
 wire();
 
