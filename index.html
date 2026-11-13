@@ -911,8 +911,8 @@ function solveNetwork(){
   const I=S.islands[S.main];const deLive=BUSES.some(b=>b.zone!=='EXT'&&b.isl>=0);if(!deLive){S.impSched=0;S.ace=0;S.imb=0;S.aceRaw=0;return allOk}
   if(I&&I.hasExt){S.aceRaw=(sched-imp);S.ace=S.aceRaw+S.Kde*(I.f-F0)}
   else if(I){S.aceRaw=0;S.ace=(I.f-F0)*(I.Hs>0?S.Kde:0)}
-  S.imb=S.ace;if(I&&!I.hasExt){let gv=0;for(const g of I.src)gv+=g.gov||0;S.imb=I.pacc-gv}
   else S.ace=0;
+  S.imb=S.ace;if(I&&!I.hasExt){let gv=0;for(const g of I.src)gv+=g.gov||0;S.imb=I.pacc-gv}
   return allOk}
 
 /* ----- inicialización y despacho ----- */
